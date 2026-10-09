@@ -1,0 +1,31 @@
+-module(bright_hub_view).
+-export([render/0]).
+
+render() ->
+    <<"<!doctype html><html lang='en'><head><meta charset='utf-8'>",
+      "<meta name='viewport' content='width=device-width,initial-scale=1'>",
+      "<title>Bright Studio · Learning Hub Preview</title>",
+      "<style>*{box-sizing:border-box}body{margin:0;background:#f8f7f4;color:#24312d;font:16px system-ui,sans-serif}",
+      "header{background:#18322f;color:#fff;padding:20px 5vw;display:flex;justify-content:space-between;align-items:center}",
+      "header a{color:#e3f3e8}main{max-width:1050px;margin:auto;padding:48px 24px}",
+      ".eyebrow{color:#527c6b;font-size:12px;letter-spacing:.12em;text-transform:uppercase}",
+      "h1{font-size:clamp(32px,5vw,48px);margin:12px 0}.muted{color:#66736e}",
+      ".grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:26px}",
+      ".card{background:white;border:1px solid #e0e7e0;border-radius:16px;padding:24px}",
+      ".card h2{margin:0 0 10px;font-size:20px}.tag{display:inline-block;background:#e9f1e9;border-radius:18px;padding:6px 12px;font-size:12px}",
+      ".notice{padding:16px 20px;background:#fff4d9;border-radius:12px;border:1px solid #ead8a2;margin:24px 0}",
+      "button{border:0;background:#225c4d;color:white;border-radius:10px;padding:12px 18px;font:inherit;cursor:pointer}",
+      "button:focus-visible,a:focus-visible{outline:3px solid #d49c30;outline-offset:3px}",
+      "@media(max-width:650px){header{padding:16px}main{padding:28px 16px}}</style></head>",
+      "<body><header><strong>bright studio / hub</strong><a href='/studio/'>Back to Studio</a></header>",
+      "<main><div class='eyebrow'>UI-first milestone 1</div><h1>Your learning space</h1>",
+      "<p class='muted'>A calm place for sources, reading, evidence and study.</p>",
+      "<div class='notice' role='status'><strong>Prototype only.</strong> These are interface previews, not saved sources or account data. ",
+      "Authentication and project authorization must be completed before the Learning Hub can be enabled.</div>",
+      "<div class='grid'><section class='card'><h2>Library</h2><p class='muted'>Your sources will appear here.</p>",
+      "<span class='tag'>Empty state preview</span></section>",
+      "<section class='card'><h2>Reader</h2><p class='muted'>Open a source and collect evidence.</p>",
+      "<span class='tag'>Coming next</span></section>",
+      "<section class='card'><h2>Study</h2><p class='muted'>Turn source material into practice.</p>",
+      "<span class='tag'>Coming later</span></section></div>",
+      "</main></body></html>">>.
