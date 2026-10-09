@@ -1,1 +1,1 @@
-{application, bright_platform, [{description, "Bright Studio platform"}, {vsn, "0.1.0"}, {modules, []}, {registered, [bright_platform_sup]}, {applications, [kernel, stdlib]}, {mod, {bright_platform_app, []}}]}.
+{application, bright_platform, [{description, "Bright Studio platform"}, {vsn, "0.1.0"}, {modules, []}, {registered, [bright_platform_sup]}, {applications, [kernel, stdlib, epgsql]}, {mod, {bright_platform_app, []}}]}.
