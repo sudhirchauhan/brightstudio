@@ -1,0 +1,21 @@
+name: Erlang CI
+on:
+  push:
+    branches: [main, feat/erlang-sql-pool]
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
+          rebar3-version: '3.24'
+      - name: Compile
+        run: cd erlang && rebar3 compile
+      - name: EUnit
+        run: cd erlang && rebar3 eunit
+      - name: Build release
+        run: cd erlang && rebar3 as prod release
