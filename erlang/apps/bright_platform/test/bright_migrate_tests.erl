@@ -10,3 +10,15 @@ missing_configuration_test() ->
             Value -> os:putenv("DATABASE_URL", Value)
         end
     end.
+
+migration_numeric_order_test() ->
+    ?assertEqual(["2.sql", "10.sql"],
+                 bright_migrate:sort_migration_files(["10.sql", "2.sql"])).
+
+migration_duplicate_version_test() ->
+    ?assertEqual({error, duplicate_migration_version},
+                 bright_migrate:sort_migration_files(["01.sql", "1.sql"])).
+
+migration_invalid_name_test() ->
+    ?assertEqual({error, invalid_migration_filename},
+                 bright_migrate:sort_migration_files(["not-a-number.sql"])).
