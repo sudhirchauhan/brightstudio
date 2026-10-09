@@ -1,5 +1,5 @@
 -module(bright_migrate).
--export([run/0, run/1, apply/2]).
+-export([run/0, run/1, apply_migrations/2]).
 -define(LOCK_ID, 74190321).
 
 %% Run only as an explicit release job, never during web/worker boot.
@@ -12,12 +12,12 @@ run() ->
 run(Url) ->
     case bright_db:connect(Url) of
         {ok, Conn} ->
-            try apply(Conn, migration_files())
+            try apply_migrations(Conn, migration_files())
             after epgsql:close(Conn) end;
         Error -> Error
     end.
 
-apply(Conn, Files) ->
+apply_migrations(Conn, Files) ->
     case epgsql:equery(Conn, "SELECT pg_advisory_lock($1)", [?LOCK_ID]) of
         {ok, _, _} ->
             try
