@@ -1,6 +1,6 @@
 FROM erlang:27 AS build
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates wget && rm -rf /var/lib/apt/lists/*
 RUN wget -q https://s3.amazonaws.com/rebar3/rebar3 -O /usr/local/bin/rebar3 && chmod +x /usr/local/bin/rebar3
 COPY . .
 RUN rebar3 get-deps && rebar3 compile && rebar3 eunit && rebar3 as prod release
