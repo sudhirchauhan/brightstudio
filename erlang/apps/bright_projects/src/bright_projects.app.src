@@ -1,1 +1,1 @@
-{application, bright_projects, [{description, "bright_projects"}, {vsn, "0.1.0"}, {modules, []}, {applications, [kernel, stdlib]}]}.
+{application, bright_projects, [{description, "bright_projects"}, {vsn, "0.1.0"}, {modules, []}, {applications, [kernel, stdlib, crypto, bright_platform]}]}.

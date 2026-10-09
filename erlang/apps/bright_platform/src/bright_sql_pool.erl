@@ -17,6 +17,7 @@ with_connection(Fun) when is_function(Fun, 1) ->
     end.
 
 init([]) ->
+    process_flag(trap_exit,true),
     Max = case application:get_env(bright_platform, sql_pool_size, 5) of
         N when is_integer(N), N > 0 -> N;
         _ -> 5
@@ -62,6 +63,17 @@ handle_info({'DOWN', Ref, process, Pid, _}, S = #state{leased = Leased, total = 
     lists:foreach(fun(Conn) -> catch epgsql:close(Conn) end, Matches),
     Next = lists:foldl(fun(Conn, Acc) -> maps:remove(Conn, Acc) end, Leased, Matches),
     {noreply, S#state{leased = Next, total = Total - length(Matches)}};
+handle_info({'EXIT', Conn, _}, S = #state{idle = Idle, leased = Leased, total = Total}) ->
+    case maps:find(Conn,Leased) of
+        {ok,{_,Ref}} ->
+            erlang:demonitor(Ref,[flush]),
+            {noreply,S#state{leased=maps:remove(Conn,Leased),total=Total-1}};
+        error ->
+            case lists:member(Conn,Idle) of
+                true -> {noreply,S#state{idle=lists:delete(Conn,Idle),total=Total-1}};
+                false -> {noreply,S}
+            end
+    end;
 handle_info(_, S) -> {noreply, S}.
 terminate(_, #state{idle = Idle, leased = Leased}) ->
     lists:foreach(fun(Conn) -> catch epgsql:close(Conn) end, Idle ++ maps:keys(Leased)),

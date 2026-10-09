@@ -7,6 +7,18 @@ start_link() ->
         {"/readyz", bright_http_handler, ready},
         {"/", bright_http_handler, home},
         {"/studio/", bright_http_handler, studio},
-        {"/studio/hub/", bright_http_handler, hub}
+        {"/studio/login/", bright_hub_handler, login_page},
+        {"/studio/login.js", bright_hub_handler, {public_asset,"login.js",<<"text/javascript">>}},
+        {"/studio/hub.css", bright_hub_handler, {public_asset,"hub.css",<<"text/css">>}},
+        {"/studio/hub/hub.js", bright_hub_handler, {asset,"hub.js",<<"text/javascript">>}},
+        {"/studio/hub/", bright_hub_handler, hub},
+        {"/studio/hub/library/", bright_hub_handler, library},
+        {"/studio/hub/sources/:id", bright_hub_handler, reader},
+        {"/studio/api/session/login", bright_hub_handler, login},
+        {"/studio/api/session/logout", bright_hub_handler, logout},
+        {"/studio/api/session", bright_hub_handler, session},
+        {"/studio/api/hub/projects", bright_hub_handler, projects},
+        {"/studio/api/hub/sources", bright_hub_handler, sources},
+        {"/studio/api/hub/sources/:id", bright_hub_handler, source}
     ]}]),
     cowboy:start_clear(bright_http, [{port, Port}], #{env => #{dispatch => Dispatch}, max_connections => 1024}).

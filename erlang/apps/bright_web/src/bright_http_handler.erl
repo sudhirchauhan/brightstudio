@@ -3,10 +3,7 @@
 -export([init/2, shell/1]).
 init(Req, live) -> plain(200, <<"ok">>, Req, live);
 init(Req, ready) ->
-    Status = case os:getenv("DATABASE_URL") of
-        false -> 503;
-        Url -> case bright_db:ping(Url) of ok -> 200; _ -> 503 end
-    end,
+    Status = case bright_ready:check() of ok -> 200; _ -> 503 end,
     plain(Status, case Status of 200 -> <<"ready">>; _ -> <<"database unavailable">> end, Req, ready);
 init(Req, hub) -> plain(404, <<"not found">>, Req, hub);
 init(Req, Page) ->

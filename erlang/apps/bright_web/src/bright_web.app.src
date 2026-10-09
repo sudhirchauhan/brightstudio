@@ -1,1 +1,1 @@
-{application, bright_web, [{description, "Bright Studio HTTP"}, {vsn, "0.1.0"}, {modules, []}, {registered, [bright_web_sup]}, {applications, [kernel, stdlib, cowboy, bright_platform]}, {mod, {bright_web_app, []}}]}.
+{application, bright_web, [{description, "Bright Studio HTTP"}, {vsn, "0.1.0"}, {modules, []}, {registered, [bright_web_sup]}, {applications, [kernel, stdlib, cowboy, jsx, bright_identity, bright_projects, bright_studio, bright_platform]}, {mod, {bright_web_app, []}}]}.

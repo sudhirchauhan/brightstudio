@@ -18,8 +18,15 @@ connect(Url) ->
         {ok, #{host := Host, port := Port, user := User,
                password := Password, database := Database, ssl := Ssl}} ->
             Options = [{database, Database}, {port, Port}, {timeout, 3000}] ++
-                case Ssl of true -> [{ssl, true}]; false -> [] end,
-            epgsql:connect(Host, User, Password, Options);
+                case Ssl of
+                    true -> [{ssl, required}, {ssl_opts, [
+                        {verify, verify_peer}, {cacertfile, os:getenv("BRIGHT_DB_CA_FILE", "/etc/ssl/certs/ca-certificates.crt")},
+                        {server_name_indication, Host},
+                        {customize_hostname_check, [{match_fun, public_key:pkix_verify_hostname_match_fun(https)}]}
+                    ]}];
+                    false -> []
+                end,
+            safe_connect(Host, User, Password, Options);
         Error -> Error
     end.
 
@@ -52,3 +59,29 @@ parse_url(Url) when is_list(Url) ->
                ssl => SslMode =:= "require"}}
     catch _:_ -> {error, invalid_database_configuration} end;
 parse_url(_) -> {error, invalid_database_configuration}.
+
+%% Isolate asynchronous connection failure exits. Transfer successful socket ownership
+%% only after the caller links it; close it if the caller disappears before transfer.
+safe_connect(Host, User, Password, Options) ->
+    Caller = self(), Tag = make_ref(),
+    {Helper,Monitor} = spawn_monitor(fun() ->
+        process_flag(trap_exit,true),
+        OwnerMonitor = erlang:monitor(process,Caller),
+        Result = try epgsql:connect(Host,User,Password,Options)
+                 catch _:_ -> {error,connection_failed} end,
+        Caller ! {Tag,Result},
+        case Result of
+            {ok,C} ->
+                receive
+                    {Tag,accepted} -> unlink(C);
+                    {'DOWN',OwnerMonitor,process,Caller,_} -> epgsql:close(C)
+                after 5000 -> epgsql:close(C) end;
+            _ -> ok
+        end
+    end),
+    receive
+        {Tag,{ok,C}=Result} ->
+            link(C), Helper ! {Tag,accepted}, erlang:demonitor(Monitor,[flush]), Result;
+        {Tag,Error} -> erlang:demonitor(Monitor,[flush]), Error;
+        {'DOWN',Monitor,process,Helper,_} -> {error,connection_failed}
+    after 6000 -> exit(Helper,kill), erlang:demonitor(Monitor,[flush]), {error,connection_timeout} end.

@@ -1,31 +1,8 @@
 -module(bright_hub_view).
--export([render/0]).
-
-render() ->
-    <<"<!doctype html><html lang='en'><head><meta charset='utf-8'>",
-      "<meta name='viewport' content='width=device-width,initial-scale=1'>",
-      "<title>Bright Studio · Learning Hub Preview</title>",
-      "<style>*{box-sizing:border-box}body{margin:0;background:#f8f7f4;color:#24312d;font:16px system-ui,sans-serif}",
-      "header{background:#18322f;color:#fff;padding:20px 5vw;display:flex;justify-content:space-between;align-items:center}",
-      "header a{color:#e3f3e8}main{max-width:1050px;margin:auto;padding:48px 24px}",
-      ".eyebrow{color:#527c6b;font-size:12px;letter-spacing:.12em;text-transform:uppercase}",
-      "h1{font-size:clamp(32px,5vw,48px);margin:12px 0}.muted{color:#66736e}",
-      ".grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:26px}",
-      ".card{background:white;border:1px solid #e0e7e0;border-radius:16px;padding:24px}",
-      ".card h2{margin:0 0 10px;font-size:20px}.tag{display:inline-block;background:#e9f1e9;border-radius:18px;padding:6px 12px;font-size:12px}",
-      ".notice{padding:16px 20px;background:#fff4d9;border-radius:12px;border:1px solid #ead8a2;margin:24px 0}",
-      "button{border:0;background:#225c4d;color:white;border-radius:10px;padding:12px 18px;font:inherit;cursor:pointer}",
-      "button:focus-visible,a:focus-visible{outline:3px solid #d49c30;outline-offset:3px}",
-      "@media(max-width:650px){header{padding:16px}main{padding:28px 16px}}</style></head>",
-      "<body><header><strong>bright studio / hub</strong><a href='/studio/'>Back to Studio</a></header>",
-      "<main><div class='eyebrow'>UI-first milestone 1</div><h1>Your learning space</h1>",
-      "<p class='muted'>A calm place for sources, reading, evidence and study.</p>",
-      "<div class='notice' role='status'><strong>Prototype only.</strong> These are interface previews, not saved sources or account data. ",
-      "Authentication and project authorization must be completed before the Learning Hub can be enabled.</div>",
-      "<div class='grid'><section class='card'><h2>Library</h2><p class='muted'>Your sources will appear here.</p>",
-      "<span class='tag'>Empty state preview</span></section>",
-      "<section class='card'><h2>Reader</h2><p class='muted'>Open a source and collect evidence.</p>",
-      "<span class='tag'>Coming next</span></section>",
-      "<section class='card'><h2>Study</h2><p class='muted'>Turn source material into practice.</p>",
-      "<span class='tag'>Coming later</span></section></div>",
-      "</main></body></html>">>.
+-export([render/0,login/0]).
+head(Title,Script) -> [<<"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>">>,Title,
+ <<" · Bright Studio</title><link rel='stylesheet' href='/studio/hub.css'><script defer src='">>,Script,<<"'></script></head><body><a class='skip' href='#main'>Skip to content</a>">>].
+login() -> [head(<<"Sign in">>,<<"/studio/login.js">>),
+ <<"<main id='main' class='login'><p class='eyebrow'>Bright Studio</p><h1>Sign in</h1><p>Open your learning workspace.</p><form id='login-form'><label>Email<input name='email' type='email' autocomplete='username' required maxlength='254'></label><label>Password<input name='password' type='password' autocomplete='current-password' required maxlength='1024'></label><button>Sign in</button><p id='status' role='status' aria-live='polite'></p></form></main></body></html>">>].
+render() -> [head(<<"Learning Hub">>,<<"/studio/hub/hub.js">>),
+ <<"<div class='layout'><aside><a class='brand' href='/studio/hub/'>bright studio</a><nav aria-label='Primary'><a href='/studio/hub/'>Overview</a><a href='/studio/hub/library/'>Library</a><span>Study · Coming later</span><span>Focus · Coming later</span><span>Documents · Coming later</span><span>Audio · Coming later</span></nav></aside><div><header><label>Project<select id='project' aria-label='Project'></select></label><span id='account'></span><button id='logout' class='secondary'>Sign out</button></header><main id='main'><p class='eyebrow'>Your learning workspace</p><h1 id='heading'>Library</h1><p id='description'>Keep the sources that matter, and return to them when you are ready.</p><p class='notice'>Metadata only. File upload, extraction and study tools are coming later.</p><p id='status' role='status' aria-live='polite'>Loading projects…</p><section id='library' hidden><div class='toolbar'><label>Search sources<input id='search' type='search'></label><button id='add'>Add Source</button></div><p id='empty' hidden>No sources yet. Add your first source to start your library.</p><div id='sources' class='grid'></div></section><section id='reader' hidden><a href='/studio/hub/library/'>Back to Library</a><h2 id='source-title'></h2><p id='source-kind'></p><a id='source-url' rel='noopener noreferrer' target='_blank' hidden>Open original link</a><p class='notice'>Reader placeholder. Only source metadata is saved; content has not been extracted.</p></section></main></div></div><dialog id='dialog' aria-labelledby='dialog-title'><form id='source-form'><h2 id='dialog-title'>Add Source</h2><p>Save source metadata to this project.</p><label>Title<input name='title' required maxlength='200'></label><label>Type<select name='kind'><option value='note'>Note</option><option value='article'>Article</option><option value='book'>Book</option><option value='link'>Link</option></select></label><label>Original URL (optional)<input name='url' type='url' maxlength='2048' placeholder='https://'></label><p id='form-status' role='status' aria-live='polite'></p><div class='actions'><button id='cancel' type='button' class='secondary'>Cancel</button><button id='save'>Save source</button></div></form></dialog></body></html>">>].

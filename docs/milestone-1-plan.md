@@ -1,6 +1,6 @@
 # Milestone 1 — UI-first walking skeleton
 
-Status: Approved implementation plan; implementation and acceptance not yet complete.
+Status: Implementation and local acceptance completed on `milestone-1`; Render staging release acceptance remains pending access. See [acceptance evidence](milestone-1-acceptance.md) and [runbook](milestone-1-runbook.md).
 Baseline: GitHub `sudhirchauhan/brightstudio`, branch `main`; Render workspace My Workspace. Work branch: `feat/m1-ui-first-walking-skeleton`.
 Architecture: Erlang/OTP + Cowboy + PostgreSQL 17. No Django, Python application backend, Phoenix, or secondary application backend.
 

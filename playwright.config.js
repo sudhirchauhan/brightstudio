@@ -1,0 +1,2 @@
+const {defineConfig} = require('@playwright/test');
+module.exports = defineConfig({testDir:'tests/e2e',workers:1,use:{launchOptions:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? {executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE} : {},baseURL:process.env.BRIGHT_TEST_BASE || 'http://127.0.0.1:10000'},projects:[{name:'desktop',use:{viewport:{width:1280,height:800}}},{name:'mobile',use:{viewport:{width:390,height:844}}}]});

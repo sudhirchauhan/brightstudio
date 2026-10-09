@@ -1,21 +1,61 @@
 name: Erlang CI
 on:
   push:
-    branches: [main, feat/erlang-sql-pool]
+    branches: [main, 'feat/**', milestone-1]
   pull_request:
     branches: [main]
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: bright
+          POSTGRES_PASSWORD: acceptance-only
+          POSTGRES_DB: bright
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U bright"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://bright:acceptance-only@127.0.0.1:5432/bright
+      STUDIO_HUB_ENABLED: 'true'
+      BRIGHT_ORIGIN: http://127.0.0.1:10000
+      BRIGHT_INSECURE_LOCAL_COOKIE: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
           otp-version: '27'
-          rebar3-version: '3.24'
-      - name: Compile
-        run: cd erlang && rebar3 compile
-      - name: EUnit
-        run: cd erlang && rebar3 eunit
-      - name: Build release
-        run: cd erlang && rebar3 as prod release
+          rebar3-version: '3.27'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Compile and integration tests
+        working-directory: erlang
+        run: rebar3 compile && BRIGHT_INTEGRATION_TESTS=true rebar3 eunit
+      - name: Release and isolated acceptance accounts
+        working-directory: erlang
+        run: rebar3 as prod release && BRIGHT_ACCEPTANCE_SEED=true escript scripts/seed_acceptance.escript
+      - name: Browser dependencies
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: HTTP and browser acceptance
+        run: |
+          erlang/_build/prod/rel/bright_studio/bin/bright_studio foreground > /tmp/bright-release.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:10000/readyz; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:10000/readyz
+          npm run test:e2e
+      - name: Release restart, gates and dependency failure
+        run: node tests/release-checks.js
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: acceptance-failures
+          path: |
+            test-results/
+            /tmp/bright-release.log
