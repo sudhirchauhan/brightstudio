@@ -1,1 +1,1 @@
-{application, bright_identity, [{description, "bright_identity"}, {vsn, "0.1.0"}, {modules, []}, {applications, [kernel, stdlib]}]}.
+{application, bright_identity, [{description, "bright_identity"}, {vsn, "0.1.0"}, {modules, []}, {applications, [kernel, stdlib, crypto]}]}.
