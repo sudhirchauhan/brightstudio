@@ -25,7 +25,12 @@ init([]) ->
 
 handle_call(checkout, {Pid, _}, S = #state{idle = [Conn | Rest], leased = Leased}) ->
     Ref = erlang:monitor(process, Pid),
-    {reply, {ok, Conn}, S#state{idle = Rest, leased = Leased#{Conn => {Pid, Ref}}}};
+    case is_process_alive(Conn) of
+        true -> {reply, {ok, Conn}, S#state{idle = Rest, leased = Leased#{Conn => {Pid, Ref}}}};
+        false ->
+            erlang:demonitor(Ref, [flush]),
+            handle_call(checkout, {Pid, undefined}, S#state{idle = Rest, total = S#state.total - 1})
+    end;
 handle_call(checkout, {Pid, _}, S = #state{total = Total, max = Max, leased = Leased}) when Total < Max ->
     case os:getenv("DATABASE_URL") of
         false -> {reply, {error, missing_database_url}, S};
@@ -42,7 +47,11 @@ handle_call({checkin, Conn}, {Pid, _}, S = #state{leased = Leased, idle = Idle})
     case maps:find(Conn, Leased) of
         {ok, {Pid, Ref}} ->
             erlang:demonitor(Ref, [flush]),
-            {reply, ok, S#state{leased = maps:remove(Conn, Leased), idle = [Conn | Idle]}};
+            Next = S#state{leased = maps:remove(Conn, Leased)},
+            case is_process_alive(Conn) of
+                true -> {reply, ok, Next#state{idle = [Conn | Idle]}};
+                false -> {reply, ok, Next#state{total = S#state.total - 1}}
+            end;
         _ -> {reply, {error, not_connection_owner}, S}
     end;
 handle_call(_, _, S) -> {reply, {error, bad_request}, S}.
