@@ -1,5 +1,5 @@
 -module(bright_migrate).
--export([run/0, run/1, apply_migrations/2]).
+-export([run/0, run/1, apply_migrations/2, sort_migration_files/1]).
 -define(LOCK_ID, 74190321).
 
 %% Run only as an explicit release job, never during web/worker boot.
