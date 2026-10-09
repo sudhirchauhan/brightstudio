@@ -1,0 +1,23 @@
+CREATE TABLE bright_source_revisions (
+ id uuid PRIMARY KEY,
+ source_id uuid NOT NULL,
+ owner_id uuid NOT NULL,
+ revision integer NOT NULL CHECK (revision > 0),
+ filename text NOT NULL CHECK (length(filename) BETWEEN 1 AND 255),
+ mime text NOT NULL CHECK (mime IN ('text/plain','application/pdf','application/epub+zip')),
+ original bytea NOT NULL CHECK (octet_length(original) BETWEEN 1 AND 4194304),
+ sha256 bytea NOT NULL CHECK (octet_length(sha256)=32),
+ idempotency_key text NOT NULL CHECK (length(idempotency_key) BETWEEN 16 AND 128),
+ state text NOT NULL DEFAULT 'queued' CHECK (state IN ('queued','processing','ready','failed')),
+ text_content text CHECK (octet_length(text_content)<=2097152),
+ error_code text,
+ attempts integer NOT NULL DEFAULT 0 CHECK (attempts>=0),
+ lease_token uuid,
+ lease_until timestamptz,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ completed_at timestamptz,
+ FOREIGN KEY(source_id,owner_id) REFERENCES bright_sources(id,owner_id),
+ UNIQUE(source_id,revision),
+ UNIQUE(owner_id,idempotency_key),
+ CHECK ((state='ready' AND text_content IS NOT NULL) OR (state<>'ready' AND text_content IS NULL))
+);

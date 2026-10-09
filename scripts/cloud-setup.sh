@@ -31,6 +31,21 @@ if ! docker container inspect bright-m1-dev >/dev/null 2>&1; then
 else
   docker start bright-m1-dev >/dev/null
 fi
+if ! docker container inspect bright-m2-worker >/dev/null 2>&1; then
+  docker run -d --name bright-m2-worker --network bright-m1 --env-file "$state_root/app.env" \
+    -e BRIGHT_ROLE=worker -e STUDIO_LIBRARY_ENABLED=true \
+    -v "$project_root/erlang:/app" -w /app --user 1000:1000 \
+    erlang:27@sha256:3bcaa1d1d910da84b59b3cfd192adc2228fcd78937adefda029f8b3a1477b3f5 sleep infinity >/dev/null
+else
+  docker start bright-m2-worker >/dev/null
+fi
+# Domain lease tests run without a competing local extraction worker.
+if docker exec -e VMARGS_PATH=/app/config/worker.vm.args bright-m2-worker _build/prod/rel/bright_studio/bin/bright_studio ping >/dev/null 2>&1; then
+  docker exec -e VMARGS_PATH=/app/config/worker.vm.args bright-m2-worker _build/prod/rel/bright_studio/bin/bright_studio stop
+fi
+for runtime in bright-m1-dev bright-m2-worker; do
+  docker exec --user 0 "$runtime" sh -c 'if ! command -v pdftotext >/dev/null; then apt-get update -qq && apt-get install -y --no-install-recommends poppler-utils; fi'
+done
 # Use the platform's public CA bundle through rebar3's documented trust setting.
 docker cp /etc/ssl/certs/ca-certificates.crt bright-m1-dev:/tmp/bright-ca.crt >/dev/null
 docker exec --user 0 bright-m1-dev sh -c 'mkdir -p /.config/rebar3; printf "{ssl_cacerts_path, \"/tmp/bright-ca.crt\"}.\n" > /.config/rebar3/rebar.config'

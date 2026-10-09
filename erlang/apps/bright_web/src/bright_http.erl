@@ -19,6 +19,11 @@ start_link() ->
         {"/studio/api/session", bright_hub_handler, session},
         {"/studio/api/hub/projects", bright_hub_handler, projects},
         {"/studio/api/hub/sources", bright_hub_handler, sources},
-        {"/studio/api/hub/sources/:id", bright_hub_handler, source}
+        {"/studio/api/hub/sources/:id", bright_hub_handler, source},
+        {"/studio/api/hub/library-state", bright_hub_handler, library_state},
+        {"/studio/api/hub/sources/:id/revisions", bright_hub_handler, revisions},
+        {"/studio/api/hub/sources/:id/revisions/:revision/content", bright_hub_handler, revision_content},
+        {"/studio/api/hub/sources/:id/revisions/:revision/original", bright_hub_handler, revision_original},
+        {"/studio/api/hub/sources/:id/revisions/:revision/retry", bright_hub_handler, revision_retry}
     ]}]),
     cowboy:start_clear(bright_http, [{port, Port}], #{env => #{dispatch => Dispatch}, max_connections => 1024}).

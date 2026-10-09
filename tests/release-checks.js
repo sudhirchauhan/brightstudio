@@ -24,7 +24,7 @@ async function waitReady(expected = 200) {
 async function stop() { command(['stop']); await delay(500); }
 async function start(overrides = {},ready = 200) {
   if(container) {
-    const args = ['exec','-d'];
+    const args = ['exec','-d','-e','STUDIO_LIBRARY_ENABLED=true'];
     for(const [key,value] of Object.entries(overrides)) if(value!==undefined) args.push('-e',`${key}=${value}`);
     args.push(container);
     const unset = Object.entries(overrides).filter(([,v])=>v===undefined).map(([k])=>k);

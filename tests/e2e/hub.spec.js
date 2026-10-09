@@ -49,7 +49,7 @@ test('keyboard dialog, saved source and reader on desktop and mobile',async({pag
   expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 test('loading, empty, validation and dependency error states',async({page})=>{
-  await login(page.request);
+  await page.context().addCookies(JSON.parse(require('node:fs').readFileSync('playwright/.auth/a.json','utf8')).cookies);
   let releaseLoading; const loading = new Promise(resolve => { releaseLoading = resolve; });
   await page.route('**/studio/api/hub/sources?*',async route=> { await loading; await route.fulfill({status:200,contentType:'application/json',body:'[]'}); });
   await page.goto('/studio/hub/library/');

@@ -2,8 +2,8 @@
 -behaviour(cowboy_handler).
 -export([init/2]).
 init(Req,Route) ->
-    case os:getenv("STUDIO_HUB_ENABLED") of
-        "true" ->
+    case {os:getenv("STUDIO_HUB_ENABLED"),library_route(Route) andalso not bright_library:enabled()} of
+        {"true",false} ->
             try dispatch(Req,Route)
             catch _:_ -> reply(503,#{error => unavailable},Req,Route) end;
         _ -> reply(404,#{error => not_found},Req,Route)
@@ -54,13 +54,25 @@ authorized(Req,Route,User,Token) ->
     end.
 get(Req,session,User,Token) ->
     case bright_identity:profile(User) of
-        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token)},Req,session);
+        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token),library_enabled=>bright_library:enabled()},Req,session);
         Error -> error_reply(Error,Req,session)
     end;
 get(Req,projects,User,_) -> result(bright_project_auth:list(User),Req,projects);
 get(Req,sources,User,_) ->
     Params = cowboy_req:parse_qs(Req), Project = proplists:get_value(<<"project_id">>,Params,<<>>),
     result(bright_source:list(User,Project),Req,sources);
+get(Req,library_state,User,_) ->
+    Project=proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>),
+    result(bright_library:states(User,Project),Req,library_state);
+get(Req,revisions,User,_) -> result(bright_library:revisions(User,cowboy_req:binding(id,Req)),Req,revisions);
+get(Req,revision_content,User,_) -> result(bright_library:content(User,cowboy_req:binding(id,Req),cowboy_req:binding(revision,Req)),Req,revision_content);
+get(Req,revision_original,User,_) ->
+    case bright_library:original(User,cowboy_req:binding(id,Req),cowboy_req:binding(revision,Req)) of
+        {ok,#{mime:=Mime,data:=Data}} ->
+            R=cowboy_req:set_resp_header(<<"content-disposition">>,<<"attachment; filename=source-original">>,Req),
+            raw(200,Mime,Data,R,revision_original);
+        Error->error_reply(Error,Req,revision_original)
+    end;
 get(Req,source,User,_) -> result(bright_source:read(User,cowboy_req:binding(id,Req)),Req,source);
 get(Req,reader,User,_) ->
     case bright_source:read(User,cowboy_req:binding(id,Req)) of
@@ -82,12 +94,42 @@ post(Req,sources,User,_) ->
             Error -> error_reply(Error,R,sources)
         end
     end,sources);
+post(Req,revisions,User,_) ->
+    Mime=hd(binary:split(cowboy_req:header(<<"content-type">>,Req,<<>>),<<";">>)),
+    case lists:member(Mime,[<<"text/plain">>,<<"application/pdf">>,<<"application/epub+zip">>]) of
+        false->reply(415,#{error=>unsupported_type},Req,revisions);
+        true->
+            Name=try uri_string:percent_decode(cowboy_req:header(<<"x-upload-filename">>,Req,<<>>)) catch _:_ -> undefined end,
+            Key=cowboy_req:header(<<"idempotency-key">>,Req,<<>>),
+            case upload_body(Req,[],0) of
+                {ok,Data,R}->case bright_library:upload(User,cowboy_req:binding(id,R),Key,#{filename=>Name,mime=>Mime,data=>Data}) of
+                    {ok,Revision}->reply(201,Revision,R,revisions);
+                    Error->error_reply(Error,R,revisions)
+                end;
+                {too_large,R}->reply(413,#{error=>body_too_large},R,revisions)
+            end
+    end;
+post(Req,revision_retry,User,_) ->
+    case bright_library:retry(User,cowboy_req:binding(id,Req),cowboy_req:binding(revision,Req)) of
+        {ok,Value}->reply(202,Value,Req,revision_retry);
+        Error->error_reply(Error,Req,revision_retry)
+    end;
 post(Req,logout,_,Token) ->
     case bright_session:revoke(Token) of
         ok -> R = cowboy_req:set_resp_cookie(<<"bright_session">>,<<>>,Req,(cookie_options())#{max_age=>0}), reply(200,#{ok=>true},R,logout);
         Error -> error_reply(Error,Req,logout)
     end;
 post(Req,Route,_,_) -> reply(405,#{error=>method_not_allowed},Req,Route).
+upload_body(Req,Chunks,Size) ->
+    {State,Chunk,R}=cowboy_req:read_body(Req,#{length=>65536,period=>5000}),
+    case Size+byte_size(Chunk)=<4194304 of
+        false->{too_large,R};
+        true->case State of
+            ok->{ok,iolist_to_binary(lists:reverse([Chunk|Chunks])),R};
+            more->upload_body(R,[Chunk|Chunks],Size+byte_size(Chunk))
+        end
+    end.
+library_route(Route)->lists:member(Route,[library_state,revisions,revision_content,revision_original,revision_retry]).
 body(Req,Fun,Route) ->
     case cowboy_req:header(<<"content-type">>,Req,<<>>) of
         <<"application/json",_/binary>> ->
@@ -116,6 +158,7 @@ result(Error,Req,Route) -> error_reply(Error,Req,Route).
 error_reply({error,Reason},Req,Route) ->
     {Code,Public} = case Reason of
         unauthenticated -> {401,unauthenticated}; forbidden -> {403,forbidden};
+        disabled -> {404,not_found}; quota_exceeded -> {413,quota_exceeded}; not_ready -> {409,not_ready};
         not_found -> {404,not_found}; invalid_input -> {400,invalid_input}; conflict -> {409,conflict};
         _ -> {503,unavailable}
     end,

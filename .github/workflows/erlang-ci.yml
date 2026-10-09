@@ -1,7 +1,7 @@
 name: Erlang CI
 on:
   push:
-    branches: [main, 'feat/**', milestone-1]
+    branches: [main, 'feat/**', milestone-1, milestone-2]
   pull_request:
     branches: [main]
 jobs:
@@ -21,6 +21,7 @@ jobs:
     env:
       DATABASE_URL: postgres://bright:acceptance-only@127.0.0.1:5432/bright
       STUDIO_HUB_ENABLED: 'true'
+      STUDIO_LIBRARY_ENABLED: 'true'
       BRIGHT_ORIGIN: http://127.0.0.1:10000
       BRIGHT_INSECURE_LOCAL_COOKIE: 'true'
     steps:
@@ -33,6 +34,8 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: PDF extraction prerequisite
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
       - name: Compile and integration tests
         working-directory: erlang
         run: rebar3 compile && BRIGHT_INTEGRATION_TESTS=true rebar3 eunit
@@ -49,9 +52,15 @@ jobs:
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:10000/readyz
+          BRIGHT_ROLE=worker VMARGS_PATH="$PWD/erlang/config/worker.vm.args" erlang/_build/prod/rel/bright_studio/bin/bright_studio foreground > /tmp/bright-worker.log 2>&1 &
+          for attempt in $(seq 1 20); do
+            if VMARGS_PATH="$PWD/erlang/config/worker.vm.args" erlang/_build/prod/rel/bright_studio/bin/bright_studio ping; then break; fi
+            sleep 1
+          done
+          VMARGS_PATH="$PWD/erlang/config/worker.vm.args" erlang/_build/prod/rel/bright_studio/bin/bright_studio ping
           npm run test:e2e
       - name: Release restart, gates and dependency failure
-        run: node tests/release-checks.js
+        run: node tests/release-checks.js && node tests/library-release-checks.js
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -59,3 +68,4 @@ jobs:
           path: |
             test-results/
             /tmp/bright-release.log
+            /tmp/bright-worker.log

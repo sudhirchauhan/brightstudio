@@ -1,1 +1,1 @@
-{application, bright_studio, [{description, "bright_studio"}, {vsn, "0.1.0"}, {modules, []}, {applications, [kernel, stdlib, bright_projects, bright_platform]}]}.
+{application, bright_studio, [{description, "Private source library and Reader"}, {vsn, "0.2.0"}, {modules, []}, {applications, [kernel, stdlib, crypto, xmerl, bright_identity, bright_projects, bright_platform]}, {mod, {bright_studio_app, []}}]}.

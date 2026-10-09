@@ -8,9 +8,10 @@ check() ->
                 case os:getenv("STUDIO_HUB_ENABLED") of
                     "true" ->
                         true = valid_origin(),
+                        Versions = case bright_library:enabled() of true->[2,3,4,5,6,7,8,9];false->[2,3,4,5,6,7] end,
                         bright_sql_pool:with_connection(fun(C) ->
-                            case epgsql:equery(C,"SELECT count(*) FROM bright_schema_migrations WHERE version IN (2,3,4,5,6,7)",[]) of
-                                {ok,_,[{6}]} -> ok;
+                            case epgsql:equery(C,"SELECT count(*) FROM bright_schema_migrations WHERE version=ANY($1::bigint[])",[Versions]) of
+                                {ok,_,[{Count}]} when Count=:=length(Versions) -> ok;
                                 _ -> {error,unavailable}
                             end
                         end);

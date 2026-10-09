@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM erlang:27@sha256:3bcaa1d1d910da84b59b3cfd192adc2228fcd78937adefda029f8b3a1477b3f5 AS build
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 # The pinned image includes rebar3 3.27.0. Retain Hex checksums and TLS verification.
 COPY . .
@@ -8,7 +9,8 @@ RUN --mount=type=secret,id=cloud_ca \
       mkdir -p /root/.config/rebar3 && \
       printf '{ssl_cacerts_path, "/run/secrets/cloud_ca"}.\n' > /root/.config/rebar3/rebar.config; \
     fi && rebar3 compile && rebar3 eunit && rebar3 as prod release
-FROM erlang:27@sha256:3bcaa1d1d910da84b59b3cfd192adc2228fcd78937adefda029f8b3a1477b3f5
+FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libtinfo6 zlib1g libstdc++6 libssl3 util-linux poppler-utils && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build --chown=1000:1000 /app/_build/prod/rel/bright_studio /app
 ENV PORT=10000 BRIGHT_ROLE=web

@@ -1,0 +1,41 @@
+# Separate staging pair. Never replace the main-linked service with this Blueprint.
+services:
+  - type: web
+    name: brightstudio-m2-staging
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    branch: milestone-2
+    autoDeploy: false
+    dockerContext: ./erlang
+    dockerfilePath: ./erlang/Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: BRIGHT_ROLE
+        value: web
+      - key: STUDIO_HUB_ENABLED
+        value: "false"
+      - key: STUDIO_LIBRARY_ENABLED
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: BRIGHT_ORIGIN
+        sync: false
+  - type: worker
+    name: brightstudio-m2-extraction-staging
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    branch: milestone-2
+    autoDeploy: false
+    dockerContext: ./erlang
+    dockerfilePath: ./erlang/Dockerfile
+    envVars:
+      - key: BRIGHT_ROLE
+        value: worker
+      - key: STUDIO_HUB_ENABLED
+        value: "false"
+      - key: STUDIO_LIBRARY_ENABLED
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
