@@ -15,3 +15,9 @@ unique_token_test() ->
     {Token2, Digest2} = bright_identity_token:new(),
     ?assertNotEqual(Token1, Token2),
     ?assertNotEqual(Digest1, Digest2).
+
+canonical_token_test() ->
+    {Token, Digest} = bright_identity_token:new(),
+    ?assertEqual({ok, Digest}, bright_identity_token:decode_digest(Token)),
+    ?assertEqual(error, bright_identity_token:decode_digest(<<"bad">>)),
+    ?assertEqual(error, bright_identity_token:decode_digest(<<"+", (binary:part(Token, 1, 42))/binary>>)).
