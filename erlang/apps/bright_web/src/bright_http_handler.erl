@@ -19,8 +19,8 @@ init(Req, hub) ->
 init(Req, Page) ->
     Title = case Page of home -> <<"Bright Studio">>; studio -> <<"Studio">> end,
     Body = <<"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>", Title/binary, "</title></head><body><main><h1>", Title/binary, "</h1><p>Erlang application foundation</p></main></body></html>">>,
-    cowboy_req:reply(200, #{<<"content-type">> => <<"text/html; charset=utf-8">>, <<"cache-control">> => <<"no-store">>}, Body, Req),
-    {ok, Req}.
+    R = cowboy_req:reply(200, #{<<"content-type">> => <<"text/html; charset=utf-8">>, <<"cache-control">> => <<"no-store">>}, Body, Req),
+    {ok, R}.
 reply(Status, Body, Req) ->
     R = cowboy_req:reply(Status, #{<<"content-type">> => <<"text/plain; charset=utf-8">>, <<"cache-control">> => <<"no-store">>}, Body, Req),
     {ok, R}.
