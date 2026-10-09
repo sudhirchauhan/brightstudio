@@ -8,7 +8,18 @@ init(Req, ready) ->
         Url -> case bright_db:ping(Url) of ok -> 200; _ -> 503 end
     end,
     plain(Status, case Status of 200 -> <<"ready">>; _ -> <<"database unavailable">> end, Req, ready);
-init(Req, hub) -> plain(404, <<"not found">>, Req, hub);
+init(Req, hub) ->
+    %% Authenticate before any future Hub resource lookup. Hub remains disabled.
+    Cookies = cowboy_req:parse_cookies(Req),
+    case lists:keyfind(<<"bright_session">>, 1, Cookies) of
+        {_, Token} ->
+            case bright_identity_session:authenticate(Token) of
+                {ok, _Principal} -> plain(404, <<"not found">>, Req, hub);
+                {error, unauthorized} -> plain(401, <<"unauthorized">>, Req, hub);
+                _ -> plain(503, <<"authentication unavailable">>, Req, hub)
+            end;
+        false -> plain(401, <<"unauthorized">>, Req, hub)
+    end;
 init(Req, Page) ->
     R = cowboy_req:reply(200, #{<<"content-type">> => <<"text/html; charset=utf-8">>,
         <<"cache-control">> => <<"no-store">>,
