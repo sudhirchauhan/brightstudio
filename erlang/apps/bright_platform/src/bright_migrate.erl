@@ -12,7 +12,11 @@ run() ->
 run(Url) ->
     case bright_db:connect(Url) of
         {ok, Conn} ->
-            try apply_migrations(Conn, migration_files())
+            try
+                case migration_files() of
+                    {error, _} = Error -> Error;
+                    Files -> apply_migrations(Conn, Files)
+                end
             after epgsql:close(Conn) end;
         Error -> Error
     end.
@@ -33,7 +37,29 @@ apply_migrations(Conn, Files) ->
 
 migration_files() ->
     Priv = code:priv_dir(bright_platform),
-    lists:sort(filelib:wildcard(filename:join([Priv, "migrations", "*.sql"]))).
+    sort_migration_files(filelib:wildcard(filename:join([Priv, "migrations", "*.sql"]))).
+
+%% Version order is numeric: 2.sql must run before 10.sql.
+%% Reject ambiguous and malformed filenames before running any migration.
+sort_migration_files(Files) ->
+    Parsed = [migration_version(Path) || Path <- Files],
+    case lists:all(fun({ok, _}) -> true; (_) -> false end, Parsed) of
+        false -> {error, invalid_migration_filename};
+        true ->
+            Versions = [Version || {ok, Version} <- Parsed],
+            case length(Versions) =:= length(lists:usort(Versions)) of
+                false -> {error, duplicate_migration_version};
+                true ->
+                    [Path || {_, Path} <- lists:keysort(1, lists:zip(Versions, Files))]
+            end
+    end.
+
+migration_version(Path) ->
+    Base = filename:basename(Path, ".sql"),
+    case string:to_integer(Base) of
+        {Version, ""} when Version > 0 -> {ok, Version};
+        _ -> {error, invalid_migration_filename}
+    end.
 
 apply_files(_Conn, []) -> ok;
 apply_files(Conn, [Path | Rest]) ->
