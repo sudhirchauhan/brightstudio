@@ -1,0 +1,1 @@
+{application, bright_planner, [{description, "bright_planner"}, {vsn, "0.1.0"}, {modules, []}, {applications, [kernel, stdlib]}]}.
