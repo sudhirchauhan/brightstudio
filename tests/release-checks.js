@@ -24,7 +24,7 @@ async function waitReady(expected = 200) {
 async function stop() { command(['stop']); await delay(500); }
 async function start(overrides = {},ready = 200) {
   if(container) {
-    const args = ['exec','-d','-e','STUDIO_LIBRARY_ENABLED=true'];
+    const args = ['exec','-d','-e','STUDIO_LIBRARY_ENABLED=true','-e','STUDIO_EVIDENCE_ENABLED=true'];
     for(const [key,value] of Object.entries(overrides)) if(value!==undefined) args.push('-e',`${key}=${value}`);
     args.push(container);
     const unset = Object.entries(overrides).filter(([,v])=>v===undefined).map(([k])=>k);
@@ -36,7 +36,11 @@ async function start(overrides = {},ready = 200) {
     const log = openSync('/tmp/bright-release-checks.log','a');
     const child = spawn(release,['foreground'],{cwd:root,env,detached:true,stdio:['ignore',log,log]}); child.unref();
   }
-  if(ready!==null) await waitReady(ready); else await delay(1500);
+  if(ready!==null) await waitReady(ready);
+  else {
+    for(let i=0;i<40;i++){await delay(250);try{if(command(['ping']).includes('pong'))return;}catch{}}
+    throw new Error('Worker release did not become ready');
+  }
 }
 (async()=>{
   await waitReady();

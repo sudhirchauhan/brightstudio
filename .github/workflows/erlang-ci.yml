@@ -1,7 +1,7 @@
 name: Erlang CI
 on:
   push:
-    branches: [main, 'feat/**', milestone-1, milestone-2]
+    branches: [main, 'feat/**', milestone-1, milestone-2, milestone-3]
   pull_request:
     branches: [main]
 jobs:
@@ -22,6 +22,7 @@ jobs:
       DATABASE_URL: postgres://bright:acceptance-only@127.0.0.1:5432/bright
       STUDIO_HUB_ENABLED: 'true'
       STUDIO_LIBRARY_ENABLED: 'true'
+      STUDIO_EVIDENCE_ENABLED: 'true'
       BRIGHT_ORIGIN: http://127.0.0.1:10000
       BRIGHT_INSECURE_LOCAL_COOKIE: 'true'
     steps:
@@ -60,7 +61,7 @@ jobs:
           VMARGS_PATH="$PWD/erlang/config/worker.vm.args" erlang/_build/prod/rel/bright_studio/bin/bright_studio ping
           npm run test:e2e
       - name: Release restart, gates and dependency failure
-        run: node tests/release-checks.js && node tests/library-release-checks.js
+        run: node tests/release-checks.js && node tests/library-release-checks.js && node tests/evidence-release-checks.js
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
