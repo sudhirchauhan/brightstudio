@@ -1,6 +1,6 @@
 # Milestone 3 staging and rollback
 
-Implementation/local acceptance and Render release are separate gates. Use `render-milestone-3.yaml` for separate staging web, worker and PostgreSQL services on milestone-3, with auto-deploy off and features initially disabled. This Blueprint provisions paid resources; approval of the provisioning costs is required before applying it. Existing main-linked services and their databases must remain intact.
+Implementation/local acceptance and Render release are separate gates. Use `render-milestone-3.yaml` for separate staging web, worker and PostgreSQL services on milestone-3, with auto-deploy off and features initially disabled. This Blueprint provisions paid resources. The user authorized deployment on 2026-10-11; use dedicated staging resources. Existing main-linked services and their databases must remain intact.
 
 ## Migration and enablement
 
@@ -30,4 +30,10 @@ Initial limits: 1,000 evidence items and 100 boards per owner, 1,000 links per b
 
 ## Current external status
 
-The existing RENDER_API_KEY was reused successfully for service listing/details. The PostgreSQL API returned HTTP 403 with a Cloudflare response, so database API discovery was not completed. No staging resources or deployments have been created. Use Render dashboard/Blueprint provisioning after cost approval, or resolve the API access failure before automating it. No Render credentials are saved in source. Main remains unchanged.
+On 2026-10-11, the user authorized upgrading the newly created `brightstudio-m1-staging` service instead of creating another web service. Service `srv-db5qa5bl550s73b1qu40` now tracks `milestone-3`, with auto-deploy off and HTTPS origin `https://brightstudio-m1-staging.onrender.com`. Render reports deploy `dep-db5qau8473hc73c25nng` live at commit `a2f6a4209aa729d43904363beabd3974e53ee4b0`. The existing main-linked development service was not changed.
+
+This is a code deployment, not functional acceptance. The staging service has no DATABASE_URL configured; Hub, Library and Evidence remain disabled. No extraction worker has been created. The user has been asked to configure a dedicated PostgreSQL 17 database in Frankfurt, keep external access disabled, and save its internal connection URL in the staging service's Render environment. Do not copy database credentials into source, logs or chat, or reuse the public acceptance fixture credentials.
+
+The existing RENDER_API_KEY works for service reads, updates and deployments. PostgreSQL and Blueprint create operations returned Cloudflare HTTP 403; database discovery and provisioning remain blocked from this machine. Public-site verification also encountered an environment egress-proxy CONNECT 403. The staging hostname was added to the saved environment network draft, preserving api.render.com; review/save and publish are required to activate that draft. No public-site health or functional checks have passed yet.
+
+After DATABASE_URL is saved, verify that it identifies the dedicated private staging database, run the explicit migration job from the reviewed release and verify versions 1–15. Provision secure staging accounts, configure the extraction worker with the same private database, enable the feature flags, and run staging acceptance before describing the URL as ready for Library/Evidence testing.
