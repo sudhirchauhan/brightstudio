@@ -4,8 +4,16 @@
 start_link()->supervisor:start_link({local,?MODULE},?MODULE,[]).
 init([])->
     Children=case os:getenv("BRIGHT_ROLE","web") of
-        "web"->[];
-        "worker"->[#{id=>bright_source_worker,start=>{bright_source_worker,start_link,[]},restart=>permanent,shutdown=>25000}];
+        "web"->case os:getenv("STUDIO_WEB_EXTRACTION_ENABLED") of
+            "true"->[source_worker()];
+            _->[]
+        end;
+        "worker"->[source_worker()];
         _->error(invalid_role)
     end,
     {ok,{{one_for_one,5,10},Children}}.
+
+%% Opt-in for free staging: extraction stays asynchronous and uses the same
+%% durable SQL leases as the separate worker. The web service may sleep.
+source_worker()->
+    #{id=>bright_source_worker,start=>{bright_source_worker,start_link,[]},restart=>permanent,shutdown=>25000}.

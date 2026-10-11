@@ -1,6 +1,6 @@
 # Milestone 3 staging and rollback
 
-Implementation/local acceptance and Render release are separate gates. Use `render-milestone-3.yaml` for separate staging web, worker and PostgreSQL services on milestone-3, with auto-deploy off and features initially disabled. This Blueprint provisions paid resources. The user authorized deployment on 2026-10-11; use dedicated staging resources. Existing main-linked services and their databases must remain intact.
+Implementation/local acceptance and Render release are separate gates. Use `render-milestone-3.yaml` for separate staging web, worker and PostgreSQL services on milestone-3, with auto-deploy off and features initially disabled. The latest user instruction permits free plans only: use `render-milestone-3-free.yaml` instead. Do not apply the paid Blueprint. Existing main-linked services and their databases must remain intact.
 
 ## Migration and enablement
 
@@ -37,3 +37,13 @@ This is a code deployment, not functional acceptance. The staging service has no
 The existing RENDER_API_KEY works for service reads, updates and deployments. PostgreSQL and Blueprint create operations returned Cloudflare HTTP 403; database discovery and provisioning remain blocked from this machine. Public-site verification also encountered an environment egress-proxy CONNECT 403. The staging hostname was added to the saved environment network draft, preserving api.render.com; review/save and publish are required to activate that draft. No public-site health or functional checks have passed yet.
 
 After DATABASE_URL is saved, verify that it identifies the dedicated private staging database, run the explicit migration job from the reviewed release and verify versions 1–15. Provision secure staging accounts, configure the extraction worker with the same private database, enable the feature flags, and run staging acceptance before describing the URL as ready for Library/Evidence testing.
+
+## Free staging configuration
+
+The user's latest instruction supersedes paid provisioning: free plans only. The existing web service remains free. Managed PostgreSQL creation with plan `free` returned Cloudflare HTTP 403 from this cloud machine, so a dedicated free database still needs to be connected through Render's dashboard. The attempted private-service database workaround returned HTTP 402 and created no service; it must not be retried on a paid plan.
+
+`render-milestone-3-free.yaml` describes the free web/database configuration and reuses the staging web service name. In the Blueprint flow, select `milestone-3`, that file path, and adopt the existing staging service rather than create a duplicate. Set `STUDIO_WEB_EXTRACTION_ENABLED=true` only for this staging web service. This starts the existing supervised asynchronous extraction process in the web VM, using the same PostgreSQL leases, stored originals and restart recovery as the dedicated worker. Other web deployments default to no extraction worker. Library feature flags still gate extraction.
+
+Keep Hub/Library/Evidence disabled until an explicit migration operation has succeeded and secure accounts are provisioned. Free Render services do not provide the paid pre-deploy job workflow; execute migration/provisioning as explicit operator operations, not automatic application startup. After enabling, verify readiness, uploads and extraction, evidence creation, and restart persistence. Because web and extraction share resources, sleeping or restarting the web VM pauses extraction; SQL leases allow retry after wake-up. No public database endpoint is required.
+
+Free PostgreSQL has an expiration date and limited storage. Verify its current expiry in Render, use disposable testing data, and export anything needed before expiry. This free configuration does not promise durable production hosting.

@@ -28,3 +28,5 @@ bin/bright_studio eval 'bright_migrate_cli:main().'
 The migration runner uses a PostgreSQL advisory lock, numeric versions and transactions. Back up a real database before applying reviewed migrations. `sslmode=require` requires certificate- and hostname-verified TLS without plaintext fallback.
 
 Render staging remains a separate deployment gate; the runbook records current access and provisioning requirements. [Milestone 3 staging and rollback runbook](docs/milestone-3-runbook.md) describes the private DB, health checks, account provisioning and expiry safeguards. Main auto-deploys the existing development service; do not merge until staging gates pass.
+
+For free staging, use `render-milestone-3-free.yaml`. It reuses `brightstudio-m1-staging`, requests free PostgreSQL, and sets `STUDIO_WEB_EXTRACTION_ENABLED=true` so extraction runs asynchronously inside the web service without a paid worker. The setting defaults off. Free web services can sleep, delaying queued extraction until they wake; free PostgreSQL expires and is intended for disposable testing.
