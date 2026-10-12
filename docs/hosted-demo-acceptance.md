@@ -30,3 +30,9 @@ Two additional browser-test sources/notes were created in the development accoun
 ## Limits
 
 This is Chromium desktop/mobile-viewport acceptance, not a claim of Safari, native mobile devices, production durability or complete legacy parity. Free Render instance replacement can still erase user-created data. The PostgreSQL backend and the main deployment were not changed by the sample-loader fix. No paid services were provisioned.
+
+## Signed-out page entry fix
+
+Application SHA `359aeae03a20039c6bf5374c63a23d3fd040eafd`, live deploy `dep-db65elflk1mc73c02fo0`, fixes browser page requests that previously displayed `{"error":"unauthenticated"}`. Signed-out GET requests for Hub, Library, Reader and Evidence now redirect to sign-in with an encoded return path. Successful sign-in returns to an allowlisted page on the same origin, preserving its query/pinned revision. API and protected asset requests retain HTTP 401 JSON; feature-disabled routes still return 404.
+
+34 SQLite EUnit tests and ten desktop/mobile Hub cases passed locally. The focused sign-in/return-path cases passed again on both viewports after adding checks rejecting external URLs and asset paths as login destinations. Live Chromium checks at desktop and mobile viewports passed direct anonymous/invalid-session Library navigation, the sign-in form, unchanged API 401, successful login returning to Library, visible samples, sign-out, and signed-out Evidence navigation. The live browser checks preserved HTTPS verification.
