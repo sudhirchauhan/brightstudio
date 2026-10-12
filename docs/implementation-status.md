@@ -10,7 +10,7 @@ The original roadmap is [Full UI-first Erlang/OTP Delivery Plan](bright-studio-f
 | 1 | Account and workspace parity | Private password login, sessions, project selection and owner authorization implemented | Legacy login/recovery/import, project/task management and planner parity |
 | 2 | Library and Reader | Uploads, private originals, immutable revisions, TXT/PDF/EPUB extraction and extracted-text Reader implemented; demo verified | Layout-faithful reading, remote imports and production durability are not claimed |
 | 3 | Evidence and notes | Exact revision-pinned quotes, UTF-8 anchors, annotations, versioned edits/history and project boards implemented; demo verified | Product acceptance and production release gates |
-| 4 | Study workflow | Not implemented | Lessons, attempts, feedback, durable gates and progress |
+| 4 | Study workflow | Revision-pinned recall lessons, attempts, feedback, reflection gate and resume implemented; local checks passed | Hosted release/user design acceptance and production durability |
 | 5 | Focus | Not implemented | Sessions, checkpoint guards and restart-safe transitions |
 | 6 | Documents | Not implemented | Cited blocks, revisions, concurrent-edit handling and export |
 | 7 | AI assistant | Not implemented | Grounded provider adapters, citation policy, budgets and cost tests |
@@ -22,7 +22,7 @@ Milestone 1 delivered the Hub/authentication/source-metadata walking skeleton, n
 
 ## Current development and deployed state
 
-- SQLite development is implemented alongside the PostgreSQL backend. Application/domain logic remains Erlang/OTP. Versioned SQLite migrations cover versions 1–15; PostgreSQL migrations and TLS checks remain intact.
+- SQLite development is implemented alongside the PostgreSQL backend. Application/domain logic remains Erlang/OTP. Versioned SQLite migrations cover versions 1–18; PostgreSQL migrations and TLS checks remain intact.
 - Default cloud development uses `scripts/cloud-sqlite-setup.sh` and `scripts/cloud-sqlite-start.sh`, with the `bright-sqlite-dev` container, a retained workspace SQLite file and supervised extraction in the web VM. Existing PostgreSQL files/volumes are preserved.
 - Render service: `brightstudio-m1-staging` (`srv-db5qa5bl550s73b1qu40`), Frankfurt, **free**, `milestone-3`, auto-deploy off. Live application commit: `adcad743583f65b614ab1b0d5ea4a2e0b2a68c2f`; deploy `dep-db63om7lot8c738oqmk0`. `/readyz` is the deployment health check.
 - URL: https://brightstudio-m1-staging.onrender.com/studio/login/ . Hub, Library, Evidence and web extraction are enabled. A private getting-started source, note and board were added through the real hosted APIs.

@@ -1,5 +1,5 @@
 -module(bright_evidence).
--export([enabled/0,anchor/4,create/3,list/3,read/2,edit/4,history/2,boards/2,board/2,create_board/3,link/3]).
+-export([text/3,enabled/0,anchor/4,create/3,list/3,read/2,edit/4,history/2,boards/2,board/2,create_board/3,link/3]).
 enabled()->bright_library:enabled() andalso os:getenv("STUDIO_EVIDENCE_ENABLED")=:= "true".
 key(K)->is_binary(K) andalso re:run(K,<<"^[!-~]{16,128}$">>,[{capture,none}])=:=match.
 text(B,Max,Empty) when is_binary(B),byte_size(B)=<Max*4 ->

@@ -1,0 +1,56 @@
+-module(bright_study_tests).
+-include_lib("eunit/include/eunit.hrl").
+prepare_test()->
+    [L]=bright_study:prepare(unicode:characters_to_binary("café learning stays saved.")),
+    ?assertEqual(unicode:characters_to_binary("café"),maps:get(<<"answer">>,L)),
+    ?assertEqual(<<"____ learning stays saved.">>,maps:get(<<"prompt">>,L)),
+    ?assertEqual([],bright_study:prepare(<<"! ?">>)),
+    ?assertEqual([],bright_study:prepare(binary:copy(<<"a">>,5000))),
+    Bounded=bright_study:prepare(binary:copy(<<"longword ">>,10000)),
+    ?assert(lists:all(fun(X)->byte_size(maps:get(<<"text">>,X))=<8000 end,Bounded)),
+    ?assertEqual(6,length(bright_study:prepare(iolist_to_binary(lists:duplicate(600,<<"learning ">>))))).
+study_test_()->case os:getenv("BRIGHT_INTEGRATION_TESTS") of "true"->{timeout,90,fun study/0};_->[] end.
+study()->
+    Prev=os:getenv("STUDIO_STUDY_ENABLED"),Lib=os:getenv("STUDIO_LIBRARY_ENABLED"),
+    os:putenv("STUDIO_STUDY_ENABLED","true"),os:putenv("STUDIO_LIBRARY_ENABLED","true"),
+    try
+        {ok,_}=application:ensure_all_started(bright_platform),ok=bright_migrate:run(),ok=bright_migrate:run(),
+        {ok,U,P}=bright_session:provision(<<(bright_project_auth:new_id())/binary,"@example.test">>,<<"Study-test-password">>,<<"Study project">>),
+        {ok,O,_}=bright_session:provision(<<(bright_project_auth:new_id())/binary,"@example.test">>,<<"Study-test-password">>,<<"Other">>),
+        {ok,Source}=bright_source:create(U,bright_project_auth:new_id(),#{<<"title">>=><<"Study source">>,<<"project_id">>=>P}),S=maps:get(id,Source),
+        Text=iolist_to_binary([lists:duplicate(80,<<"Learning ">>),<<"Practice saves progress.">>]),
+        {ok,R}=bright_library:upload(U,S,bright_project_auth:new_id(),#{filename=><<"lesson.txt">>,mime=><<"text/plain">>,data=>Text}),
+        M=#{<<"source_id">>=>S,<<"revision_id">>=>maps:get(id,R)},
+        ?assertEqual({error,not_ready},bright_study:start(U,bright_project_auth:new_id(),M)),ok=bright_source_worker:process_one(),
+        K=bright_project_auth:new_id(),{ok,Pass}=bright_study:start(U,K,M),Id=maps:get(id,Pass),
+        ?assertEqual(2,maps:get(total,Pass)),?assertNot(maps:is_key(<<"answer">>,maps:get(lesson,Pass))),
+        ?assertEqual({ok,Pass},bright_study:start(U,K,M)),
+        ResumeKey=bright_project_auth:new_id(),?assertEqual({ok,Pass},bright_study:start(U,ResumeKey,M)),
+        ?assertEqual({error,not_found},bright_study:read(O,Id)),?assertEqual({error,not_found},bright_study:start(O,bright_project_auth:new_id(),M)),
+        A=#{<<"expected_version">>=>1,<<"step">>=>0,<<"kind">>=><<"answer">>,<<"answer">>=><<"wrong">>},AK=bright_project_auth:new_id(),
+        ?assertEqual({error,not_found},bright_study:submit(O,Id,AK,A)),
+        ?assertEqual({error,conflict},bright_study:submit(U,Id,AK,A#{<<"kind">>=><<"summary">>})),
+        {ok,Wrong}=bright_study:submit(U,Id,AK,A),?assertEqual(false,maps:get(<<"correct">>,Wrong)),
+        ?assertEqual({ok,Wrong},bright_study:submit(U,Id,AK,A)),
+        ?assertEqual({error,conflict},bright_study:submit(U,Id,AK,A#{<<"answer">>=><<"Learning">>})),
+        ?assertEqual({error,conflict},bright_study:submit(U,Id,bright_project_auth:new_id(),A)),
+        Good=A#{<<"expected_version">>=>2,<<"answer">>=><<" LEARNING ">>},GK=bright_project_auth:new_id(),
+        {ok,Accepted}=bright_study:submit(U,Id,GK,Good),?assertEqual(true,maps:get(<<"correct">>,Accepted)),
+        Next=maps:get(<<"pass">>,Accepted),?assertEqual(1,maps:get(<<"step">>,Next)),
+        ?assertEqual({ok,Accepted},bright_study:submit(U,Id,GK,Good)),
+        ?assertEqual({error,conflict},bright_study:submit(U,Id,bright_project_auth:new_id(),Good)),
+        {ok,Summary}=bright_study:submit(U,Id,bright_project_auth:new_id(),Good#{<<"expected_version">>=>3,<<"step">>=>1,<<"answer">>=><<"Practice">>}),
+        ?assertEqual(<<"summary">>,maps:get(<<"state">>,maps:get(<<"pass">>,Summary))),
+        Final=#{<<"expected_version">>=>4,<<"step">>=>2,<<"kind">>=><<"summary">>,<<"answer">>=><<"short">>},
+        ?assertEqual({error,invalid_input},bright_study:submit(U,Id,bright_project_auth:new_id(),Final)),
+        FK=bright_project_auth:new_id(),Full=Final#{<<"answer">>=><<"I will practice recalling each passage tomorrow.">>},
+        {ok,Complete}=bright_study:submit(U,Id,FK,Full),?assertEqual(<<"completed">>,maps:get(<<"state">>,maps:get(<<"pass">>,Complete))),
+        ?assertEqual({ok,Complete},bright_study:submit(U,Id,FK,Full)),
+        ?assertEqual({error,conflict},bright_study:submit(U,Id,bright_project_auth:new_id(),Full#{<<"expected_version">>=>5})),
+        {ok,NewRevision}=bright_library:upload(U,S,bright_project_auth:new_id(),#{filename=><<"new.txt">>,mime=><<"text/plain">>,data=><<"Completely different revision.">>}),ok=bright_source_worker:process_one(),
+        ?assertEqual({error,conflict},bright_study:start(U,ResumeKey,M#{<<"revision_id">>=>maps:get(id,NewRevision)})),
+        {ok,Reopened}=bright_study:read(U,Id),?assertEqual(maps:get(id,R),maps:get(revision_id,Reopened)),?assertEqual(5,maps:get(version,Reopened)),
+        {ok,[Reopened]}=bright_study:list(U,P),
+        os:putenv("STUDIO_STUDY_ENABLED","false"),?assertEqual({error,disabled},bright_study:read(U,Id))
+    after restore("STUDIO_STUDY_ENABLED",Prev),restore("STUDIO_LIBRARY_ENABLED",Lib) end.
+restore(K,false)->os:unsetenv(K);restore(K,V)->os:putenv(K,V).

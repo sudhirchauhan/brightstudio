@@ -40,7 +40,7 @@ async function load(quiet = false) {
   } catch(error) { if (version === loadVersion) { $('#empty').hidden = true; status(error.message,true); $('#add').disabled = true; } }
 }
 $('#search').addEventListener('input', render);
-$('#project').addEventListener('change', () => {if(location.pathname !== '/studio/hub/evidence/') load();});
+$('#project').addEventListener('change', () => {if(!['/studio/hub/evidence/','/studio/hub/study/'].includes(location.pathname)) load();});
 function dialog(existingSource) {
   $('#source-form').reset(); $('#form-status').textContent = ''; key = crypto.randomUUID(); uploadKey = crypto.randomUUID();
   requestData = uploadFingerprint = createdSource = undefined; uploadSource = existingSource;
@@ -132,7 +132,7 @@ $('#logout').addEventListener('click', async () => {
     const session = await api('/studio/api/session'); csrf = session.csrf; libraryEnabled = session.library_enabled; $('#account').textContent = session.email;
     $('#library-notice').textContent = libraryEnabled ? 'Private TXT, PDF and EPUB files, with readable text and immutable revisions.' : 'Metadata only. File reading is currently disabled.';
     const projects = await api('/studio/api/hub/projects');
-    document.dispatchEvent(new CustomEvent('bright-session',{detail:{enabled:session.evidence_enabled,csrf,projects}}));
+    document.dispatchEvent(new CustomEvent('bright-session',{detail:{enabled:session.evidence_enabled,studyEnabled:session.study_enabled,csrf,projects}}));
     for(const project of projects) { const option = document.createElement('option'); option.value = project.id; option.textContent = project.title; $('#project').append(option); }
     if (!projects.length) { status('No projects available. Ask your workspace administrator to provision a project.'); return; }
     if (location.pathname.startsWith('/studio/hub/sources/')) {
@@ -143,7 +143,7 @@ $('#logout').addEventListener('click', async () => {
       $('#project').value = source.project_id; $('#project').disabled = true;
       if(source.url) { $('#source-url').href = source.url; $('#source-url').hidden = false; }
       status('Source metadata loaded.'); if (libraryEnabled) await loadRevisions();
-    } else if(location.pathname === '/studio/hub/evidence/') { $('#heading').textContent='Evidence'; $('#boards-page').hidden=false; status('Collect pinned quotes and notes on your project boards.'); }
+    } else if(location.pathname === '/studio/hub/study/') { $('#heading').textContent='Study'; $('#description').textContent='Practice a passage, save a reflection, and return to your progress.'; $('#study-page').hidden=false; status('Practice and resume saved lessons.'); } else if(location.pathname === '/studio/hub/evidence/') { $('#heading').textContent='Evidence'; $('#boards-page').hidden=false; status('Collect pinned quotes and notes on your project boards.'); }
     else { $('#library').hidden = false; await load(); }
     setInterval(() => {
       if (document.hidden || $('#dialog').open) return;

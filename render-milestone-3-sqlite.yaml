@@ -28,6 +28,8 @@ services:
         value: "true"
       - key: STUDIO_EVIDENCE_ENABLED
         value: "true"
+      - key: STUDIO_STUDY_ENABLED
+        value: "true"
       - key: BRIGHT_ORIGIN
         value: https://brightstudio-m1-staging.onrender.com
       - key: BRIGHT_BOOTSTRAP_EMAIL

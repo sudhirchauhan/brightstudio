@@ -7,13 +7,13 @@ const base=process.env.BRIGHT_TEST_BASE||'http://127.0.0.1:10000';
 const root=path.resolve(__dirname,'../erlang'),release='_build/prod/rel/bright_studio/bin/bright_studio';
 const containers={web:process.env.BRIGHT_TEST_DOCKER_CONTAINER,worker:process.env.BRIGHT_TEST_WORKER_CONTAINER};
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
-function env(role,enabled){return {...process.env,BRIGHT_ROLE:role,STUDIO_LIBRARY_ENABLED:String(enabled),...(role==='worker'?{VMARGS_PATH:path.join(root,'config/worker.vm.args')}:{})};}
+function env(role,enabled){return {...process.env,BRIGHT_ROLE:role,STUDIO_LIBRARY_ENABLED:String(enabled),STUDIO_WEB_EXTRACTION_ENABLED:'false',...(role==='worker'?{VMARGS_PATH:path.join(root,'config/worker.vm.args')}:{})};}
 function command(role,args){
   const result=containers[role]?spawnSync('docker',['exec',...(role==='worker'?['-e','VMARGS_PATH=/app/config/worker.vm.args']:[]),containers[role],release,...args],{encoding:'utf8'}):spawnSync(release,args,{cwd:root,env:env(role,true),encoding:'utf8'});
   assert.equal(result.status,0,`${role} ${args[0]} failed`);return result.stdout;
 }
 async function start(role,enabled=true){
-  if(containers[role]) assert.equal(spawnSync('docker',['exec','-d','-e',`BRIGHT_ROLE=${role}`,'-e',`STUDIO_LIBRARY_ENABLED=${enabled}`,'-e','STUDIO_EVIDENCE_ENABLED=true',...(role==='worker'?['-e','VMARGS_PATH=/app/config/worker.vm.args']:[]),containers[role],release,'foreground']).status,0);
+  if(containers[role]) assert.equal(spawnSync('docker',['exec','-d','-e',`BRIGHT_ROLE=${role}`,'-e',`STUDIO_LIBRARY_ENABLED=${enabled}`,'-e','STUDIO_EVIDENCE_ENABLED=true','-e','STUDIO_STUDY_ENABLED=true','-e','STUDIO_WEB_EXTRACTION_ENABLED=false',...(role==='worker'?['-e','VMARGS_PATH=/app/config/worker.vm.args']:[]),containers[role],release,'foreground']).status,0);
   else {const log=openSync(`/tmp/bright-${role}-checks.log`,'a');const child=spawn(release,['foreground'],{cwd:root,env:env(role,enabled),detached:true,stdio:['ignore',log,log]});child.unref();}
   for(let i=0;i<40;i++){
     await delay(250);

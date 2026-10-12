@@ -37,3 +37,7 @@ Later features remain deferred until the earlier usable journey is demonstrated.
 For every release record the exact application SHA, deploy ID, URL, enabled flags, schema versions, tests and material limitations. Keep implemented code, local acceptance, hosted functional acceptance, user design acceptance and production readiness distinct. Preserve existing data when changing flags or backend configuration; switching to SQLite does not import PostgreSQL records.
 
 Environment setup instructions are saved separately in the cloud configuration draft. Review/save and publish activate the prepared snapshot; draft saving alone is not publication. No work on the next milestone is implied by merely creating this plan.
+
+## Milestone 4 implementation update
+
+Study is implemented with deterministic revision-pinned quote-recall chunks, saved attempts, versioned gates, exact replay receipts, reflections and resume. SQLite/PostgreSQL and desktop/mobile checks pass. See [Milestone 4 contracts and validation](milestone-4-plan.md). Hosted release evidence will be added after deployment; user design acceptance and production durability remain separate. Account/workspace/planner parity remains the next item in this revised sequence.

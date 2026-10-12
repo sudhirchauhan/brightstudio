@@ -5,3 +5,11 @@
 textarea{font:inherit;min-width:0;width:100%;border:1px solid #82998a;border-radius:6px;padding:9px;resize:vertical}#evidence-panel{margin-top:32px}#find-quote{max-width:700px}blockquote{margin:16px 0;padding:10px 16px;border-left:4px solid #94ae96;white-space:pre-wrap;overflow-wrap:anywhere}.evidence-card{margin:16px 0}.evidence-card p{white-space:pre-wrap}.evidence-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.board-picker{margin-top:18px;max-width:500px}mark{background:#f6e09b;color:inherit;scroll-margin:100px}#board-form{max-width:500px}#evidence-form-status button{display:block;margin-top:12px}
 
 .development-notice{margin:0;padding:12px 24px;background:#fff3cd;color:#57420c;font-size:14px;}
+#study-prompt {white-space:pre-wrap; overflow-wrap:anywhere; margin:1rem 0;}
+#study-text {white-space:pre-wrap; overflow-wrap:anywhere;}
+#study-reference {margin:1rem 0;}
+#study-reference summary {cursor:pointer;}
+#study-feedback {min-height:2rem;}
+#study-picker, #study-passes {margin:1rem 0;}
+#study-source {display:inline-block; margin:1rem 0;}
+#study-source[hidden] {display:none;}
