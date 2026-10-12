@@ -31,4 +31,10 @@ One pass exists per owned immutable revision; reopening it resumes or reviews it
 
 36 SQLite EUnit tests and 34 PostgreSQL EUnit tests passed. The full existing-plus-Study browser suite passed 30 desktop/mobile cases, including uncertain commits/replay, stale-tab draft recovery, empty states and dependency errors. A further desktop/mobile case verifies that replaying an earlier receipt loads the latest server progress instead of rewinding the UI. Full-release Study checks passed progress/session/receipt persistence, disabled routes/scripts, Library dependency, completed-reflection persistence, and signed-out page redirect/API privacy.
 
-Hosted release evidence is recorded after successful deployment. User design acceptance is pending.
+## Hosted release evidence
+
+Application SHA `a9e6f1cfda3dad52269316ea5b2923e5f92688c7`, Render deploy `dep-db69sm7avr4c73amhqbg`, is live on the existing free `brightstudio-m1-staging` service. Study URL: https://brightstudio-m1-staging.onrender.com/studio/hub/study/ . All four UI flags and embedded extraction are enabled; schema versions are 1–18 and `/readyz` is the health check.
+
+Actual Chromium 151 desktop (1280×800) and mobile viewport (390×844) checks passed signed-out entry/login return, private source creation/upload/extraction through the UI, Study start, wrong/correct answers, keyboard submit, reload/resume, pinned revision link, final reflection/completion, completed review after reopening, no horizontal overflow, no uncaught page errors, and sign-out redirect/API 401. Screenshots were visually checked. Two disposable “Study hosted …” sources/lessons remain available for review in the development account. HTTPS/proxy certificate verification stayed enabled. Existing bootstrap credentials and the free plan were preserved. `/healthz` and `/readyz` returned 200 after acceptance.
+
+Local cloud setup and startup were rerun successfully after implementation. The original roadmap remains unchanged; implementation status and the revised plan record Study's completion. GitHub-hosted CI, user design acceptance, other browsers/physical devices and production durability are not claimed.
