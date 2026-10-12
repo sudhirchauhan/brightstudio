@@ -1,0 +1,13 @@
+Your Bright Studio walkthrough
+
+1. Open Library and choose a source.
+2. Read its text in Reader.
+3. Select a quote or use Find quote with the keyboard.
+4. Add a note and save the evidence.
+5. Link evidence to a project board.
+
+A useful note connects a quote to a question or an action.
+Evidence keeps the exact source revision that you read.
+
+Try editing a note, viewing its history, and reopening it from a board.
+Free development demo data can reset; keep copies of important work.

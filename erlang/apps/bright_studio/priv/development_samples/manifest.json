@@ -1,0 +1,149 @@
+{
+  "version": "v1",
+  "sources": [
+    {
+      "key": "walkthrough",
+      "title": "Start here — Library, Reader and Evidence",
+      "revisions": [
+        {
+          "file": "walkthrough.txt",
+          "mime": "text/plain"
+        }
+      ]
+    },
+    {
+      "key": "learning",
+      "title": "Learning techniques — two revisions",
+      "revisions": [
+        {
+          "file": "learning-v1.txt",
+          "mime": "text/plain"
+        },
+        {
+          "file": "learning-v2.txt",
+          "mime": "text/plain"
+        }
+      ]
+    },
+    {
+      "key": "unicode",
+      "title": "Unicode notebook — café, Ελληνικά, 日本語",
+      "revisions": [
+        {
+          "file": "unicode-notebook.txt",
+          "mime": "text/plain"
+        }
+      ]
+    },
+    {
+      "key": "pdf",
+      "title": "PDF sample — research checklist",
+      "revisions": [
+        {
+          "file": "research-checklist.pdf",
+          "mime": "application/pdf"
+        }
+      ]
+    },
+    {
+      "key": "epub",
+      "title": "EPUB sample — a short reading guide",
+      "revisions": [
+        {
+          "file": "short-reading-guide.epub",
+          "mime": "application/epub+zip"
+        }
+      ]
+    },
+    {
+      "key": "empty",
+      "title": "Your reading list — attach a document",
+      "kind": "note",
+      "revisions": []
+    },
+    {
+      "key": "failed",
+      "title": "Damaged PDF — failure and retry example",
+      "revisions": [
+        {
+          "file": "damaged-example.pdf",
+          "mime": "application/pdf",
+          "state": "failed"
+        }
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "key": "walkthrough-note",
+      "source": "walkthrough",
+      "revision": 1,
+      "quote": "A useful note connects a quote to a question or an action.",
+      "note": "Try editing this note, then open its version history.",
+      "edited_note": "Example edited note: connect this quote to a question, then check version history to see the earlier note."
+    },
+    {
+      "key": "walkthrough-revision",
+      "source": "walkthrough",
+      "revision": 1,
+      "quote": "Evidence keeps the exact source revision that you read.",
+      "note": "Open the source link from a board to see its pinned revision."
+    },
+    {
+      "key": "learning-old",
+      "source": "learning",
+      "revision": 1,
+      "quote": "Retrieval practice means trying to recall ideas before looking at the source again.",
+      "note": "This highlight belongs to revision 1. Revision 2 has updated text; the old evidence stays pinned."
+    },
+    {
+      "key": "learning-current",
+      "source": "learning",
+      "revision": 2,
+      "quote": "A practical learning routine combines reading, recall, and review.",
+      "note": "This is evidence from the current revision. Compare it with the earlier-revision note."
+    },
+    {
+      "key": "unicode",
+      "source": "unicode",
+      "revision": 1,
+      "quote": "Ελληνικά: κρατήστε την πηγή της σημείωσης.",
+      "note": "Unicode characters retain the exact quote and byte boundaries."
+    },
+    {
+      "key": "pdf",
+      "source": "pdf",
+      "revision": 1,
+      "quote": "Record the source revision before writing a claim.",
+      "note": "This quote was extracted from a real one-page PDF. Download the original from Reader."
+    },
+    {
+      "key": "epub",
+      "source": "epub",
+      "revision": 1,
+      "quote": "Read with a question in mind.",
+      "note": "This sample tests EPUB extraction and a quote linked to its source."
+    }
+  ],
+  "boards": [
+    {
+      "key": "walkthrough",
+      "title": "UI walkthrough",
+      "evidence": [
+        "walkthrough-note",
+        "unicode",
+        "pdf",
+        "epub"
+      ]
+    },
+    {
+      "key": "research",
+      "title": "Reading research",
+      "evidence": [
+        "walkthrough-revision",
+        "learning-old",
+        "learning-current"
+      ]
+    }
+  ]
+}

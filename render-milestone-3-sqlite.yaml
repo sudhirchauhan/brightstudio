@@ -16,6 +16,8 @@ services:
         value: sqlite:/tmp/brightstudio/development.sqlite
       - key: BRIGHT_SQLITE_DEVELOPMENT
         value: "true"
+      - key: BRIGHT_DEV_SEED_DATA
+        value: "true"
       - key: BRIGHT_ROLE
         value: web
       - key: STUDIO_WEB_EXTRACTION_ENABLED

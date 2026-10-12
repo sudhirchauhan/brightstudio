@@ -20,6 +20,16 @@ main()->
             {ok,_,[]}->{ok,_,_}=bright_session:provision(Email,Password,Title);
             {ok,_,[_]}->ok
         end,
+        case os:getenv("BRIGHT_DEV_SEED_DATA") of
+            "true"->
+                {User,Project}=bright_sql_pool:with_connection(fun(C)->
+                    {ok,_,[{U}]}=bright_sql:equery(C,"SELECT id FROM bright_users WHERE email=$1",[Email]),
+                    {ok,_,[{P}|_]}=bright_sql:equery(C,"SELECT id FROM bright_projects WHERE owner_id=$1 ORDER BY created_at,id",[U]),
+                    {U,P}
+                end),
+                ok=bright_dev_samples:run(User,Project);
+            _->ok
+        end,
         io:format("SQLite development schema and account are ready.~n"),
         erlang:halt(0)
     catch _:_ ->

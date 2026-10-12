@@ -1,0 +1,10 @@
+Unicode reading notebook
+
+A café conversation can lead to a useful question.
+Ελληνικά: κρατήστε την πηγή της σημείωσης.
+日本語: 読んだ内容を自分の言葉で説明します。
+Emoji example: 📚 Reading → ✍️ Notes → 💡 Questions
+
+<script>Sample source text.</script>
+
+Select a short phrase to try a highlight with non-ASCII characters.
