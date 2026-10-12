@@ -50,3 +50,8 @@ The current functional UI has not been accepted as a match for the original visu
 ## JPG mock gallery — 2026-10-12
 
 The user's chat/workspace image viewer failed to show valid JPGs. A public fictional-design gallery is now available at https://brightstudio-m1-staging.onrender.com/studio/mockups/ , gated by `STUDIO_UI_MOCKS_ENABLED` (default off). App SHA `249d288256b69fc0cc4676fc1a6dc706262ab387`, deploy `dep-db6h1laj9qps73c9vlj0`, passed actual desktop/mobile Chromium image decoding, JPEG MIME, byte-hash comparison, responsive layout, no-session and private-API checks. It exposes only fixed concept assets; normal application authorization remains intact. UI design acceptance and implementation of the new look remain pending.
+
+
+## Approved Quiet Studio UI — 2026-10-12
+
+Application `5f27e51aafb0d71d84f9086d2b34a45533b75878`, deploy `dep-db6hgvff3r2c73cahld0`, free `brightstudio-m1-staging`, `milestone-3`, auto-deploy off. Actual desktop (1280×800) and mobile (390×844) Chromium checks passed trusted-HTTPS private login return, keyboard TXT upload/extraction, centered Reader, independent reading/fullscreen modes and Escape, saved on-demand notes/highlights after reload, revision-bound Study/incorrect feedback/reflection/completed reload, workspace navigation, real Overview links, responsive widths, no page errors and sign-out/asset privacy. Credentials/profile settings were preserved. Live screenshots were captured for sign-in, Overview, Reader, notes, Study, Projects, Tasks, Planner, Account and Evidence. No password change, paid resource, main merge or original-service change occurred. Final user design acceptance remains separate. See [UI comparison and regression evidence](ui-alignment-plan.md).

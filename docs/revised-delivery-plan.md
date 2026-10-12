@@ -43,7 +43,7 @@ Environment setup instructions are saved separately in the cloud configuration d
 
 Study is implemented with deterministic revision-pinned quote-recall chunks, saved attempts, versioned gates, exact replay receipts, reflections and resume. SQLite/PostgreSQL and desktop/mobile checks pass. See [Milestone 4 contracts and validation](milestone-4-plan.md). The existing free service is live at `a9e6f1cfda3dad52269316ea5b2923e5f92688c7` (deploy `dep-db69sm7avr4c73amhqbg`) and actual hosted desktop/mobile Study journeys passed; user design acceptance and production durability remain separate. The account/workspace/planner implementation below has now shipped; UI alignment is the next item before Focus.
 
-## Current milestone: Account, workspace and planner
+## Delivered milestone: Account, workspace and planner
 
 The user requested direct Erlang implementation without legacy-history investigation. This milestone implements a usable account/workspace/planner journey; it does not certify equivalence to an unseen legacy application.
 
@@ -54,7 +54,7 @@ The user requested direct Erlang implementation without legacy-history investiga
 5. Add responsive Projects, Tasks, Planner and Account pages, clear empty/error states, retry handling and conflict recovery that preserves drafts. Gate the complete slice with `STUDIO_WORKSPACE_ENABLED`, default off. **Implemented; local and hosted desktop/mobile acceptance passed.**
 6. Verify both SQL backends, owner isolation, stale/concurrent edits, exact receipts, date validation, session revocation, restart persistence, existing journeys and hosted desktop/mobile acceptance; deploy to the existing free service. **Passed and deployed to the existing free service.**
 
-## New milestone: UI alignment with original mocks
+## Current milestone: Approved Quiet Studio UI alignment
 
 This milestone follows the current account/workspace/planner work and precedes Focus. The user approved the new Quiet Studio JPG concepts on 2026-10-12 and authorized applying them to the app. This is the visual reference for the milestone; it does not claim recovery of unseen originals.
 
@@ -69,3 +69,8 @@ UI alignment is a separate milestone from adding features. The approved new refe
 Detailed current contracts and release checks: [Account/workspace/planner](workspace-planner-plan.md). Dedicated next milestone: [UI alignment with original mocks](ui-alignment-plan.md).
 
 Hosted workspace release: application SHA `6d071ef51fb7225f75ca39302d373ed946f56e1e`, deploy `dep-db6dc1ss728c7383irm0`, passed actual public-site desktop/mobile journeys. Current functional delivery is complete; matching the original visual mocks remains the separate UI alignment milestone.
+
+
+## UI alignment release update
+
+The approved Quiet Studio design is implemented and live at https://brightstudio-m1-staging.onrender.com/studio/hub/ . Application SHA `5f27e51aafb0d71d84f9086d2b34a45533b75878`, Render deploy `dep-db6hgvff3r2c73cahld0`, existing free staging. Local functional/visual and real hosted desktop/mobile checks passed. Reader/Study have independent distraction-free and browser fullscreen controls; notes are on demand, and all current workspace screens share the design. Final deployed UI design acceptance remains separate. Focus remains the next planned feature slice; no Focus implementation is claimed by this UI release.
