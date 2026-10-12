@@ -7,7 +7,7 @@ The original roadmap is [Full UI-first Erlang/OTP Delivery Plan](bright-studio-f
 | Slice | Original scope | Current status | Remaining work |
 |---|---|---|---|
 | 0 | Foundation and design | OTP/Cowboy application, responsive Hub and free staged demo implemented | Broader product design acceptance and production operations |
-| 1 | Account and workspace | Private sessions, project create/rename, tasks, daily planning, display names/timezones and current-password changes implemented and locally verified | Hosted workspace release, user design acceptance, recovery delivery/membership administration and production import/cutover |
+| 1 | Account and workspace | Private sessions, project create/rename, tasks, daily planning, display names/timezones and current-password changes implemented; local and hosted desktop/mobile checks passed | User design acceptance/UI alignment, recovery delivery/membership administration and production import/cutover |
 | 2 | Library and Reader | Uploads, private originals, immutable revisions, TXT/PDF/EPUB extraction and extracted-text Reader implemented; demo verified | Layout-faithful reading, remote imports and production durability are not claimed |
 | 3 | Evidence and notes | Exact revision-pinned quotes, UTF-8 anchors, annotations, versioned edits/history and project boards implemented; demo verified | Product acceptance and production release gates |
 | 4 | Study workflow | Revision-pinned recall lessons, attempts, feedback, reflection gate and resume implemented; local and hosted desktop/mobile checks passed | User design acceptance and production durability |
@@ -24,17 +24,17 @@ Milestone 1 delivered the Hub/authentication/source-metadata walking skeleton, n
 
 - SQLite development is implemented alongside the PostgreSQL backend. Application/domain logic remains Erlang/OTP. Versioned SQLite migrations cover versions 1–23; PostgreSQL migrations and TLS checks remain intact.
 - Default cloud development uses `scripts/cloud-sqlite-setup.sh` and `scripts/cloud-sqlite-start.sh`, with the `bright-sqlite-dev` container, a retained workspace SQLite file and supervised extraction in the web VM. Existing PostgreSQL files/volumes are preserved.
-- Render service: `brightstudio-m1-staging` (`srv-db5qa5bl550s73b1qu40`), Frankfurt, **free**, `milestone-3`, auto-deploy off. Live application commit: `a9e6f1cfda3dad52269316ea5b2923e5f92688c7`; deploy `dep-db69sm7avr4c73amhqbg`. `/readyz` is the deployment health check.
-- URL: https://brightstudio-m1-staging.onrender.com/studio/login/ . Hub, Library, Evidence, Study and web extraction are enabled. A private getting-started source, note and board were added through the real hosted APIs.
+- Render service: `brightstudio-m1-staging` (`srv-db5qa5bl550s73b1qu40`), Frankfurt, **free**, `milestone-3`, auto-deploy off. Live application commit: `6d071ef51fb7225f75ca39302d373ed946f56e1e`; deploy `dep-db6dc1ss728c7383irm0`. `/readyz` is the deployment health check.
+- URL: https://brightstudio-m1-staging.onrender.com/studio/login/ . Hub, Library, Evidence, Study, Workspace and web extraction are enabled. A private getting-started source, note and board were added through the real hosted APIs.
 - Development login email: `developer@brightstudio.test`. The securely generated password stays in that service's Render Environment setting `BRIGHT_BOOTSTRAP_PASSWORD`; it is not recorded in source or test logs. Normal session, cookie, CSRF and ownership checks remain active.
 - Hosted SQLite is disposable: free Render instance replacement/redeploy/restart can erase saved data. The UI displays a notice. Local data survives Erlang process restarts while the workspace files remain. No production durability is asserted.
 - No paid database, worker or disk was provisioned. No main merge, original development-service change, legacy import or production cutover occurred.
 
 ## Verification evidence
 
-- 36 SQLite EUnit/domain/integration tests passed, including migration serialization/replay, transaction rollback, blob byte fidelity, injection-shaped bound input, sessions, owner isolation, immutable revisions, extraction leases and evidence conflicts/provenance.
-- 34 PostgreSQL regression EUnit tests passed, preserving the original backend and TLS failure behavior.
-- 30 desktop/mobile Playwright UI cases passed on SQLite, followed by all eight focused Study cases after the latest-progress retry improvement. Library, Evidence and Study full-release restart checks passed.
+- 42 SQLite EUnit/domain/integration tests passed, including migration serialization/replay, transaction rollback, blob byte fidelity, injection-shaped bound input, sessions, owner isolation, immutable revisions, extraction leases and evidence conflicts/provenance.
+- 39 PostgreSQL regression EUnit tests passed, preserving the original backend and TLS failure behavior.
+- All 40 desktop/mobile Playwright cases passed on SQLite. Workspace project/task/date/profile/session/receipt persistence and disabled/private-route restart checks passed, alongside separate desktop/mobile password UI/session-revocation checks. Existing Library/Evidence/Study browser regressions passed.
 - Release checks passed for session/source persistence across Erlang process restart, feature gates, missing-database readiness and worker-only roles.
 - Docker packaging and the packaged opt-in development bootstrap passed private login, Unicode upload/extraction, evidence/note persistence, session persistence and idempotent bootstrap replay across a container restart.
 - The final live Render commit passed trusted-HTTPS readiness, login, project access, TXT upload/extraction, Reader content, resolved evidence, note creation/reopen, board linking, and authenticated Hub/Library/Reader/Evidence HTML responses.
@@ -52,4 +52,6 @@ Study is live at application SHA `a9e6f1cfda3dad52269316ea5b2923e5f92688c7`, dep
 
 ## Current workspace milestone
 
-The user requested direct Erlang implementation without legacy-history comparison. Project/task/daily-planner/account features are implemented; local SQL, browser, password and restart checks passed. See [current milestone plan](workspace-planner-plan.md). [UI alignment with the original mocks](ui-alignment-plan.md) is now the next dedicated milestone, before Focus. Original visual-reference matching remains pending; the functional UI is not claimed to match those mocks.
+The user requested direct Erlang implementation without legacy-history comparison. Project/task/daily-planner/account features are live; local SQL, browser, password and restart checks and hosted desktop/mobile journeys passed. See [current milestone plan](workspace-planner-plan.md). [UI alignment with the original mocks](ui-alignment-plan.md) is now the next dedicated milestone, before Focus. Original visual-reference matching remains pending; the functional UI is not claimed to match those mocks.
+
+Workspace live SHA `6d071ef51fb7225f75ca39302d373ed946f56e1e`, deploy `dep-db6dc1ss728c7383irm0`, passed the public Projects/Tasks/Planner/Account journey, five seeded tasks, preserved bootstrap credentials and `/healthz` + `/readyz` 200 on the free service. See [current milestone release evidence](workspace-planner-plan.md). UI alignment is now the next milestone.

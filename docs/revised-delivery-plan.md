@@ -41,18 +41,18 @@ Environment setup instructions are saved separately in the cloud configuration d
 
 ## Milestone 4 implementation update
 
-Study is implemented with deterministic revision-pinned quote-recall chunks, saved attempts, versioned gates, exact replay receipts, reflections and resume. SQLite/PostgreSQL and desktop/mobile checks pass. See [Milestone 4 contracts and validation](milestone-4-plan.md). The existing free service is live at `a9e6f1cfda3dad52269316ea5b2923e5f92688c7` (deploy `dep-db69sm7avr4c73amhqbg`) and actual hosted desktop/mobile Study journeys passed; user design acceptance and production durability remain separate. Account/workspace/planner parity remains the next item in this revised sequence.
+Study is implemented with deterministic revision-pinned quote-recall chunks, saved attempts, versioned gates, exact replay receipts, reflections and resume. SQLite/PostgreSQL and desktop/mobile checks pass. See [Milestone 4 contracts and validation](milestone-4-plan.md). The existing free service is live at `a9e6f1cfda3dad52269316ea5b2923e5f92688c7` (deploy `dep-db69sm7avr4c73amhqbg`) and actual hosted desktop/mobile Study journeys passed; user design acceptance and production durability remain separate. The account/workspace/planner implementation below has now shipped; UI alignment is the next item before Focus.
 
 ## Current milestone: Account, workspace and planner
 
 The user requested direct Erlang implementation without legacy-history investigation. This milestone implements a usable account/workspace/planner journey; it does not certify equivalence to an unseen legacy application.
 
-1. Create and rename owned projects, using saved versions and replay receipts. Preserve existing sources, evidence and Study passes. **Implemented and locally verified; hosted release pending.**
-2. Add task creation/editing, owned-project moves, priority, estimates, due/scheduled dates, and todo/doing/done transitions including reopening. **Implemented and locally verified; hosted release pending.**
-3. Add a daily planner that shows scheduled, due and overdue work for a selected civil date, with saved account timezone settings. **Implemented and locally verified; hosted release pending.**
-4. Add display-name/timezone settings and current-password-authenticated password changes that revoke all sessions. **Implemented and locally verified; hosted release pending.**
-5. Add responsive Projects, Tasks, Planner and Account pages, clear empty/error states, retry handling and conflict recovery that preserves drafts. Gate the complete slice with `STUDIO_WORKSPACE_ENABLED`, default off. **Implemented and locally verified; hosted release pending.**
-6. Verify both SQL backends, owner isolation, stale/concurrent edits, exact receipts, date validation, session revocation, restart persistence, existing journeys and hosted desktop/mobile acceptance; deploy to the existing free service. **Local checks passed; hosted release pending.**
+1. Create and rename owned projects, using saved versions and replay receipts. Preserve existing sources, evidence and Study passes. **Implemented; local and hosted desktop/mobile acceptance passed.**
+2. Add task creation/editing, owned-project moves, priority, estimates, due/scheduled dates, and todo/doing/done transitions including reopening. **Implemented; local and hosted desktop/mobile acceptance passed.**
+3. Add a daily planner that shows scheduled, due and overdue work for a selected civil date, with saved account timezone settings. **Implemented; local and hosted desktop/mobile acceptance passed.**
+4. Add display-name/timezone settings and current-password-authenticated password changes that revoke all sessions. **Implemented; local and hosted desktop/mobile acceptance passed.**
+5. Add responsive Projects, Tasks, Planner and Account pages, clear empty/error states, retry handling and conflict recovery that preserves drafts. Gate the complete slice with `STUDIO_WORKSPACE_ENABLED`, default off. **Implemented; local and hosted desktop/mobile acceptance passed.**
+6. Verify both SQL backends, owner isolation, stale/concurrent edits, exact receipts, date validation, session revocation, restart persistence, existing journeys and hosted desktop/mobile acceptance; deploy to the existing free service. **Passed and deployed to the existing free service.**
 
 ## New milestone: UI alignment with original mocks
 
@@ -67,3 +67,5 @@ This milestone follows the current account/workspace/planner work and precedes F
 UI alignment is a separate milestone from adding features. Work that can be prepared without the visual reference may proceed, but exact matching remains pending until the reference is available. No paid hosting or design tool is authorized or required by this plan.
 
 Detailed current contracts and release checks: [Account/workspace/planner](workspace-planner-plan.md). Dedicated next milestone: [UI alignment with original mocks](ui-alignment-plan.md).
+
+Hosted workspace release: application SHA `6d071ef51fb7225f75ca39302d373ed946f56e1e`, deploy `dep-db6dc1ss728c7383irm0`, passed actual public-site desktop/mobile journeys. Current functional delivery is complete; matching the original visual mocks remains the separate UI alignment milestone.

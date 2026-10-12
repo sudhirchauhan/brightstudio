@@ -40,3 +40,9 @@ Application SHA `359aeae03a20039c6bf5374c63a23d3fd040eafd`, live deploy `dep-db6
 ## Milestone 4: Study — 2026-10-12
 
 Application SHA `a9e6f1cfda3dad52269316ea5b2923e5f92688c7`, deploy `dep-db69sm7avr4c73amhqbg`, passed actual public-site Chromium desktop/mobile Study acceptance: sign-in return, fresh UI source/upload/extraction, pinned lessons, wrong/correct answers, keyboard submit, reload/resume, final reflection, completed review, no horizontal overflow/page errors, and logout privacy. Live `/healthz` and `/readyz` returned 200; Render remains free. [Milestone 4 evidence and contracts](milestone-4-plan.md) records the full scope and its limits. User design acceptance and production readiness remain outstanding.
+
+## Account/workspace/planner — 2026-10-12
+
+Application SHA `6d071ef51fb7225f75ca39302d373ed946f56e1e`, deploy `dep-db6dc1ss728c7383irm0`, passed actual Chromium desktop/mobile public-site checks for private login return, five task samples, owned project create/rename, keyboard task creation, civil-date daily planning/overdue/refresh, completion/reopening/editing, saved account name/timezone/header, wrong-password denial, responsive layout without page errors, and logout/API privacy. Account settings were restored after acceptance and the testing password was unchanged. Successful password changes/all-session revocation were tested with separate local fixture accounts. `/healthz` and `/readyz` returned 200 and the Render service remains free. See [workspace evidence](workspace-planner-plan.md).
+
+The current functional UI has not been accepted as a match for the original visual mocks. [UI alignment](ui-alignment-plan.md) is the next dedicated milestone, before Focus.

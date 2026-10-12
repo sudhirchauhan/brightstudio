@@ -19,4 +19,4 @@ Cover the shell/navigation, sign-in, Overview, Library/Add Source, Reader, Evide
 
 ## Current status
 
-Planned; visual reference pending. Functional account/workspace/planner implementation continues independently. No paid service, provider or design tool is required by this milestone. See [current delivery plan](revised-delivery-plan.md).
+Planned; visual reference pending. The preceding account/workspace/planner milestone is deployed and functionally verified on desktop/mobile. No paid service, provider or design tool is required by this milestone. See [current delivery plan](revised-delivery-plan.md).
