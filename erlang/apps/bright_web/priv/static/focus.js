@@ -18,8 +18,8 @@
     const elapsed=Math.min(session.duration_ms,session.elapsed_ms+(session.state==='active'?Math.max(0,performance.now()-receivedAt):0));
     const remaining=Math.ceil((session.duration_ms-elapsed)/1000);$('#focus-timer').textContent=`${String(Math.floor(remaining/60)).padStart(2,'0')}:${String(remaining%60).padStart(2,'0')}`;
     const ready=elapsed>=session.duration_ms&&session.checkpoint_count>=1;if(ready&&!closed())$('#focus-complete-box').open=true;
-    $('#focus-finish').disabled=saving||closed()||!ready;
-    $('#focus-checkpoint-save').disabled=saving||closed()||session.checkpoint_count>=20;
+    $('#focus-finish').disabled=saving||opening||closed()||!ready;
+    $('#focus-checkpoint-save').disabled=saving||opening||closed()||session.checkpoint_count>=20;
     $('#focus-gate').textContent=closed()?'Saved session.':!session.checkpoint_count?'Save at least one checkpoint, then finish when the time is complete.':elapsed<session.duration_ms?'Finish when the session time is complete.':'Time is complete. Save your reflection to finish.';
   }
   function show(next,preserve=true){
@@ -43,7 +43,7 @@
     for(const c of next.checkpoints){const card=node('article');card.className='card';card.append(node('h3',`Checkpoint ${c.ordinal}`),node('p',c.note));if(c.quote){card.append(node('blockquote',c.quote));const link=node('a','Open pinned evidence');link.href=`/studio/hub/sources/${c.source_id}?revision=${c.revision_id}#highlight-${c.evidence_id}`;card.append(link);}$('#focus-checkpoints').append(card);}
     history.replaceState(null,'',`?session=${next.id}`);if(first){activity(true);$('#focus-mode').focus({preventScroll:true});window.scrollTo(0,0);}tick();
   }
-  async function open(id){if(saving||opening)return;opening=true;$('#focus-sync').disabled=true;try{const next=await api(`focus/${id}`);show(next);request=undefined;$('#focus-save-status').textContent='Saved session loaded. Your draft is kept; review checkpoints before saving.';status('');}catch(e){(session?$('#focus-save-status'):$('#focus-status')).textContent=e.message;}finally{opening=false;$('#focus-sync').disabled=false;}}
+  async function open(id){if(saving||opening)return;opening=true;$('#focus-sync').disabled=true;tick();try{const next=await api(`focus/${id}`);show(next);request=undefined;$('#focus-save-status').textContent='Saved session loaded. Your draft is kept; review checkpoints before saving.';status('');}catch(e){(session?$('#focus-save-status'):$('#focus-status')).textContent=e.message;}finally{opening=false;$('#focus-sync').disabled=false;tick();}}
   function card(s){const c=node('article');c.className='card';c.append(node('h2',s.target_title),node('p',`${s.state} · ${s.duration_ms/60000} minutes · ${s.checkpoint_count} checkpoints`),button(['active','paused'].includes(s.state)?'Resume saved session':'Review session',()=>open(s.id)));return c;}
   async function load(){
     if(saving)return;const current=++version,project=$('#project').value;status('Loading saved sessions…');$('#focus-start-button').disabled=true;
