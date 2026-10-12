@@ -54,7 +54,7 @@ The user requested direct Erlang implementation without legacy-history investiga
 5. Add responsive Projects, Tasks, Planner and Account pages, clear empty/error states, retry handling and conflict recovery that preserves drafts. Gate the complete slice with `STUDIO_WORKSPACE_ENABLED`, default off. **Implemented; local and hosted desktop/mobile acceptance passed.**
 6. Verify both SQL backends, owner isolation, stale/concurrent edits, exact receipts, date validation, session revocation, restart persistence, existing journeys and hosted desktop/mobile acceptance; deploy to the existing free service. **Passed and deployed to the existing free service.**
 
-## Current milestone: Approved Quiet Studio UI alignment
+## Delivered milestone: Approved Quiet Studio UI alignment
 
 This milestone follows the current account/workspace/planner work and precedes Focus. The user approved the new Quiet Studio JPG concepts on 2026-10-12 and authorized applying them to the app. This is the visual reference for the milestone; it does not claim recovery of unseen originals.
 
@@ -74,3 +74,8 @@ Hosted workspace release: application SHA `6d071ef51fb7225f75ca39302d373ed946f56
 ## UI alignment release update
 
 The approved Quiet Studio design is implemented and live at https://brightstudio-m1-staging.onrender.com/studio/hub/ . Application SHA `5f27e51aafb0d71d84f9086d2b34a45533b75878`, Render deploy `dep-db6hgvff3r2c73cahld0`, existing free staging. Local functional/visual and real hosted desktop/mobile checks passed. Reader/Study have independent distraction-free and browser fullscreen controls; notes are on demand, and all current workspace screens share the design. Final deployed UI design acceptance remains separate. Focus remains the next planned feature slice; no Focus implementation is claimed by this UI release.
+
+
+## Current milestone: Milestone 5 — Focus
+
+The user requested continuing after the deployed Quiet Studio release. Focus now implements task/source-linked sessions, a quiet timer, pause/resume, saved checkpoints with optional evidence, reflections, completion/review and independent distraction-free/fullscreen controls. Server time, expected versions, one open session per owner and replay receipts guard progress. Local SQL, full desktop/mobile regressions and actual-release restart/gate checks passed; hosted release acceptance is next. Detailed contracts and checks: [Milestone 5 Focus plan](milestone-5-plan.md). Documents is the next feature slice.

@@ -1,0 +1,28 @@
+CREATE TABLE bright_focus_sessions (
+ id uuid PRIMARY KEY,
+ owner_id uuid NOT NULL,
+ project_id uuid NOT NULL,
+ task_id uuid,
+ source_id uuid,
+ revision_id uuid,
+ target_title text NOT NULL,
+ source_revision integer,
+ duration_ms bigint NOT NULL CHECK(duration_ms BETWEEN 60000 AND 7200000),
+ elapsed_ms bigint NOT NULL DEFAULT 0 CHECK(elapsed_ms>=0 AND elapsed_ms<=duration_ms),
+ running_since_ms bigint,
+ state text NOT NULL DEFAULT 'active' CHECK(state IN ('active','paused','completed','cancelled')),
+ checkpoint_count integer NOT NULL DEFAULT 0 CHECK(checkpoint_count BETWEEN 0 AND 20),
+ summary text NOT NULL DEFAULT '',
+ version integer NOT NULL DEFAULT 1 CHECK(version>0),
+ finished_at_ms bigint,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ FOREIGN KEY(project_id,owner_id) REFERENCES bright_projects(id,owner_id),
+ FOREIGN KEY(task_id,owner_id) REFERENCES bright_tasks(id,owner_id),
+ FOREIGN KEY(revision_id,source_id,owner_id) REFERENCES bright_source_revisions(id,source_id,owner_id),
+ CHECK((task_id IS NOT NULL AND source_id IS NULL AND revision_id IS NULL AND source_revision IS NULL) OR
+       (task_id IS NULL AND source_id IS NOT NULL AND revision_id IS NOT NULL AND source_revision IS NOT NULL)),
+ CHECK((state='active' AND running_since_ms IS NOT NULL) OR (state<>'active' AND running_since_ms IS NULL)),
+ CHECK((state IN ('completed','cancelled') AND finished_at_ms IS NOT NULL) OR (state IN ('active','paused') AND finished_at_ms IS NULL)),
+ CHECK(state<>'completed' OR (elapsed_ms=duration_ms AND checkpoint_count>=1 AND length(trim(summary))>=20)),
+ UNIQUE(id,owner_id)
+);

@@ -27,6 +27,7 @@ jobs:
       STUDIO_LIBRARY_ENABLED: 'true'
       STUDIO_EVIDENCE_ENABLED: 'true'
       STUDIO_STUDY_ENABLED: 'true'
+      STUDIO_FOCUS_ENABLED: 'true'
       STUDIO_WORKSPACE_ENABLED: 'true'
       BRIGHT_ORIGIN: http://127.0.0.1:10000
       BRIGHT_INSECURE_LOCAL_COOKIE: 'true'
@@ -77,7 +78,7 @@ jobs:
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:10000/readyz
-          node tests/release-checks.js && node tests/library-release-checks.js && node tests/evidence-release-checks.js && node tests/study-release-checks.js && node tests/workspace-release-checks.js
+          node tests/release-checks.js && node tests/library-release-checks.js && node tests/evidence-release-checks.js && node tests/study-release-checks.js && node tests/workspace-release-checks.js && node tests/focus-release-checks.js
       - name: Password UI and session revocation (isolated fixture accounts)
         run: |
           erlang/_build/prod/rel/bright_studio/bin/bright_studio stop

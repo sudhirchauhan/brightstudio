@@ -2,7 +2,7 @@
 -behaviour(cowboy_handler).
 -export([init/2]).
 init(Req,Route) ->
-    case {os:getenv("STUDIO_HUB_ENABLED"),(library_route(Route) andalso not bright_library:enabled()) orelse (evidence_route(Route) andalso not bright_evidence:enabled()) orelse (study_route(Route) andalso not bright_study:enabled()) orelse (workspace_route(Route) andalso not bright_workspace:enabled())} of
+    case {os:getenv("STUDIO_HUB_ENABLED"),(library_route(Route) andalso not bright_library:enabled()) orelse (evidence_route(Route) andalso not bright_evidence:enabled()) orelse (study_route(Route) andalso not bright_study:enabled()) orelse (workspace_route(Route) andalso not bright_workspace:enabled()) orelse (focus_route(Route) andalso not bright_focus:enabled())} of
         {"true",false} ->
             try dispatch(Req,Route)
             catch _:_ -> reply(503,#{error => unavailable},Req,Route) end;
@@ -54,7 +54,7 @@ authorized(Req,Route,User,Token) ->
     end.
 get(Req,session,User,Token) ->
     case bright_identity:profile(User) of
-        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token),library_enabled=>bright_library:enabled(),evidence_enabled=>bright_evidence:enabled(),study_enabled=>bright_study:enabled(),workspace_enabled=>bright_workspace:enabled()},Req,session);
+        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token),library_enabled=>bright_library:enabled(),evidence_enabled=>bright_evidence:enabled(),study_enabled=>bright_study:enabled(),workspace_enabled=>bright_workspace:enabled(),focus_enabled=>bright_focus:enabled()},Req,session);
         Error -> error_reply(Error,Req,session)
     end;
 get(Req,workspace_page,_,_) -> html(bright_hub_view:render(),Req,workspace_page);
@@ -65,6 +65,11 @@ get(Req,tasks,User,_) ->
     Q=cowboy_req:parse_qs(Req),result(bright_tasks:list(User,proplists:get_value(<<"project_id">>,Q,<<>>),proplists:get_value(<<"day">>,Q,<<>>)),Req,tasks);
 get(Req,task,User,_) -> result(bright_tasks:read(User,cowboy_req:binding(id,Req)),Req,task);
 get(Req,account,User,_) -> result(bright_account:read(User),Req,account);
+get(Req,focus_page,_,_) -> html(bright_hub_view:render(),Req,focus_page);
+get(Req,{focus_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
+get(Req,focus_targets,User,_) -> result(bright_focus:targets(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,focus_targets);
+get(Req,focus,User,_) -> result(bright_focus:list(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,focus);
+get(Req,focus_session,User,_) -> result(bright_focus:read(User,cowboy_req:binding(id,Req)),Req,focus_session);
 get(Req,study_page,_,_) -> html(bright_hub_view:render(),Req,study_page);
 get(Req,{study_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
 get(Req,study,User,_) -> result(bright_study:list(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,study);
@@ -101,11 +106,21 @@ get(Req,reader,User,_) ->
     end;
 get(Req,Page,_User,_) when Page =:= hub; Page =:= library -> html(bright_hub_view:render(),Req,Page);
 get(Req,{asset,Name,Type}=Route,_User,_) ->
-    case file:read_file(filename:join([code:priv_dir(bright_web),"static",Name])) of
+    case read_assets(asset_files(Name)) of
         {ok,Bytes} -> raw(200,Type,Bytes,Req,Route);
         _ -> reply(404,#{error=>not_found},Req,Route)
     end;
 get(Req,Route,_,_) -> reply(405,#{error=>method_not_allowed},Req,Route).
+asset_files("hub.js")->
+    ["hub.js","ui.js"]++case bright_evidence:enabled() of true->["evidence.js"];false->[] end
+        ++case bright_study:enabled() of true->["study.js"];false->[] end
+        ++case bright_workspace:enabled() of true->["workspace.js"];false->[] end
+        ++case bright_focus:enabled() of true->["focus.js"];false->[] end;
+asset_files(Name)->[Name].
+read_assets([])->{ok,[]};
+read_assets([Name|Rest])->case file:read_file(filename:join([code:priv_dir(bright_web),"static",Name])) of
+    {ok,Bytes}->case read_assets(Rest) of {ok,Tail}->{ok,[Bytes,<<"\n;\n">>|Tail]};E->E end;
+    E->E end.
 post(Req,workspace_projects,User,_) ->
     body(Req,fun(M,R)->created(bright_workspace:create_project(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,workspace_projects) end,workspace_projects);
 post(Req,workspace_project,User,_) ->
@@ -123,6 +138,10 @@ post(Req,account_password,User,Token) ->
             {ok,V}->R1=cowboy_req:set_resp_cookie(<<"bright_session">>,<<>>,R,(cookie_options())#{max_age=>0}),reply(200,V,R1,account_password);
             Error->error_reply(Error,R,account_password) end end,account_password)
     end;
+post(Req,focus,User,_) ->
+    body(Req,fun(M,R)->created(bright_focus:start(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,focus) end,focus);
+post(Req,focus_actions,User,_) ->
+    body(Req,fun(M,R)->result(bright_focus:act(User,cowboy_req:binding(id,R),cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,focus_actions) end,focus_actions);
 post(Req,study,User,_) ->
     body(Req,fun(M,R)->created(bright_study:start(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,study) end,study);
 post(Req,study_attempts,User,_) ->
@@ -180,6 +199,8 @@ upload_body(Req,Chunks,Size) ->
     end.
 created({ok,Value},Req,Route)->reply(201,Value,Req,Route);
 created(Error,Req,Route)->error_reply(Error,Req,Route).
+focus_route({focus_asset,_,_})->true;
+focus_route(Route)->lists:member(Route,[focus_page,focus,focus_targets,focus_session,focus_actions]).
 workspace_route({workspace_asset,_,_})->true;
 workspace_route(Route)->lists:member(Route,[workspace_page,workspace_projects,workspace_project,tasks,task,account,account_password]).
 study_route({study_asset,_,_})->true;
@@ -213,7 +234,7 @@ cookie_options() ->
 result({ok,Value},Req,Route) -> reply(200,Value,Req,Route);
 result(Error,Req,Route) -> error_reply(Error,Req,Route).
 error_reply({error,unauthenticated},Req,Route) ->
-    case cowboy_req:method(Req)=:= <<"GET">> andalso lists:member(Route,[hub,library,reader,evidence_page,study_page,workspace_page]) of
+    case cowboy_req:method(Req)=:= <<"GET">> andalso lists:member(Route,[hub,library,reader,evidence_page,study_page,workspace_page,focus_page]) of
         true->
             Path=cowboy_req:path(Req),
             Next=case cowboy_req:qs(Req) of <<>>->Path;Qs-><<Path/binary,"?",Qs/binary>> end,

@@ -11,7 +11,7 @@ The original roadmap is [Full UI-first Erlang/OTP Delivery Plan](bright-studio-f
 | 2 | Library and Reader | Uploads, private originals, immutable revisions, TXT/PDF/EPUB extraction and extracted-text Reader implemented; demo verified | Layout-faithful reading, remote imports and production durability are not claimed |
 | 3 | Evidence and notes | Exact revision-pinned quotes, UTF-8 anchors, annotations, versioned edits/history and project boards implemented; demo verified | Product acceptance and production release gates |
 | 4 | Study workflow | Revision-pinned recall lessons, attempts, feedback, reflection gate and resume implemented; local and hosted desktop/mobile checks passed | User design acceptance and production durability |
-| 5 | Focus | Not implemented | Sessions, checkpoint guards and restart-safe transitions |
+| 5 | Focus | Implemented: owned task/source sessions, pause/resume, checkpoints/evidence, server-time completion and reflections; local SQL/browser/restart checks passed | Hosted release acceptance, user product review and production storage durability |
 | 6 | Documents | Not implemented | Cited blocks, revisions, concurrent-edit handling and export |
 | 7 | AI assistant | Not implemented | Grounded provider adapters, citation policy, budgets and cost tests |
 | 8 | Audio and capture | Not implemented | Recording, transcription, OCR and bounded private jobs |
@@ -65,3 +65,8 @@ The user approved the new JPG concepts on 2026-10-12 and authorized applying the
 
 
 Latest UI application release: `5f27e51aafb0d71d84f9086d2b34a45533b75878`, deployment `dep-db6hgvff3r2c73cahld0`. Desktop/mobile live browser checks passed the complete upload → Reader → notes → Study/feedback/reflection → resumed completion journey and all workspace screens, including actual native fullscreen/Escape. The public mock gallery remains a concept reference; the signed-in application now uses the approved Quiet Studio design. Focus is the next feature milestone after deployed UI review.
+
+
+## Milestone 5 — Focus local implementation
+
+Focus is implemented behind `STUDIO_FOCUS_ENABLED`, default off. Additive SQL migrations 24–28 preserve earlier data. The timer uses server anchors and persisted paused time; completion requires planned elapsed time, a saved checkpoint and reflection, with version/replay guards and one open session per owner. Study/task progress remains independent. SQLite (43) and PostgreSQL (40) domain checks, all 52 desktop/mobile browser cases, and full-release persistence/default-off/independent-gate checks passed. An authenticated feature bundle fixes the observed private-script 503 race. Hosted release acceptance is pending; [Focus contracts](milestone-5-plan.md) record scope and limitations.
