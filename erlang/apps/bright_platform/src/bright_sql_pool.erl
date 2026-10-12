@@ -60,7 +60,7 @@ handle_cast(_, S) -> {noreply, S}.
 handle_info({'DOWN', Ref, process, Pid, _}, S = #state{leased = Leased, total = Total}) ->
     Matches = [Conn || {Conn, {Owner, Monitor}} <- maps:to_list(Leased),
                        Owner =:= Pid, Monitor =:= Ref],
-    lists:foreach(fun(Conn) -> catch epgsql:close(Conn) end, Matches),
+    lists:foreach(fun(Conn) -> catch bright_sql:close(Conn) end, Matches),
     Next = lists:foldl(fun(Conn, Acc) -> maps:remove(Conn, Acc) end, Leased, Matches),
     {noreply, S#state{leased = Next, total = Total - length(Matches)}};
 handle_info({'EXIT', Conn, _}, S = #state{idle = Idle, leased = Leased, total = Total}) ->
@@ -76,5 +76,5 @@ handle_info({'EXIT', Conn, _}, S = #state{idle = Idle, leased = Leased, total = 
     end;
 handle_info(_, S) -> {noreply, S}.
 terminate(_, #state{idle = Idle, leased = Leased}) ->
-    lists:foreach(fun(Conn) -> catch epgsql:close(Conn) end, Idle ++ maps:keys(Leased)),
+    lists:foreach(fun(Conn) -> catch bright_sql:close(Conn) end, Idle ++ maps:keys(Leased)),
     ok.

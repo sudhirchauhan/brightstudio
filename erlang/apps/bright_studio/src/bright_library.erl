@@ -35,11 +35,11 @@ upload(User,Source,Key,Upload) ->
 store(User,Source,Key,#{filename:=Name,mime:=Mime,data:=Data}) ->
     Hash = crypto:hash(sha256,Data),
     bright_sql_pool:with_connection(fun(C) ->
-        Result = epgsql:with_transaction(C,fun(T) ->
+        Result = bright_sql:with_transaction(C,fun(T) ->
             %% Serialize an owner's quota, revision numbers and upload key checks together.
-            case epgsql:equery(T,"SELECT id FROM bright_users WHERE id=$1 AND disabled_at IS NULL FOR UPDATE",[User]) of
+            case bright_sql:equery(T,"SELECT id FROM bright_users WHERE id=$1 AND disabled_at IS NULL FOR UPDATE",[User]) of
                 {ok,_,[_]} ->
-                    case epgsql:equery(T,"SELECT source_id,filename,mime,sha256,id,revision,state,error_code FROM bright_source_revisions WHERE owner_id=$1 AND idempotency_key=$2",[User,Key]) of
+                    case bright_sql:equery(T,"SELECT source_id,filename,mime,sha256,id,revision,state,error_code FROM bright_source_revisions WHERE owner_id=$1 AND idempotency_key=$2",[User,Key]) of
                         {ok,_,[{Source,Name,Mime,Hash,Id,Version,State,Error}]} ->
                             {ok,revision_map(Id,Version,State,Error,Name,Mime,Hash)};
                         {ok,_,[_]} -> {error,conflict};
@@ -53,41 +53,41 @@ store(User,Source,Key,#{filename:=Name,mime:=Mime,data:=Data}) ->
         case Result of {ok,_} -> Result; {error,_} -> Result; _ -> {error,unavailable} end
     end).
 insert_revision(C,User,Source,Key,Name,Mime,Data,Hash) ->
-    {ok,_,[{Bytes,Count}]} = epgsql:equery(C,"SELECT COALESCE(sum(octet_length(original)),0)::bigint,count(*) FROM bright_source_revisions WHERE owner_id=$1",[User]),
+    {ok,_,[{Bytes,Count}]} = bright_sql:equery(C,"SELECT COALESCE(sum(octet_length(original)),0)::bigint,count(*) FROM bright_source_revisions WHERE owner_id=$1",[User]),
     case Bytes+byte_size(Data)=<quota_limit() andalso Count<256 of
         false -> {error,quota_exceeded};
         true ->
-            {ok,_,[{Version}]} = epgsql:equery(C,"SELECT COALESCE(max(revision),0)+1 FROM bright_source_revisions WHERE source_id=$1",[Source]),
+            {ok,_,[{Version}]} = bright_sql:equery(C,"SELECT COALESCE(max(revision),0)+1 FROM bright_source_revisions WHERE source_id=$1",[Source]),
             Id = bright_project_auth:new_id(),
-            {ok,1} = epgsql:equery(C,"INSERT INTO bright_source_revisions(id,source_id,owner_id,revision,filename,mime,original,sha256,idempotency_key) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[Id,Source,User,Version,Name,Mime,Data,Hash,Key]),
+            {ok,1} = bright_sql:equery(C,"INSERT INTO bright_source_revisions(id,source_id,owner_id,revision,filename,mime,original,sha256,idempotency_key) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[Id,Source,User,Version,Name,Mime,Data,Hash,Key]),
             {ok,revision_map(Id,Version,<<"queued">>,null,Name,Mime,Hash)}
     end.
 revisions(User,Source) -> with_source(User,Source,fun() ->
     bright_sql_pool:with_connection(fun(C)->
-        case epgsql:equery(C,"SELECT id,revision,state,error_code,filename,mime,sha256 FROM bright_source_revisions WHERE source_id=$1 AND owner_id=$2 ORDER BY revision DESC LIMIT 256",[Source,User]) of
+        case bright_sql:equery(C,"SELECT id,revision,state,error_code,filename,mime,sha256 FROM bright_source_revisions WHERE source_id=$1 AND owner_id=$2 ORDER BY revision DESC LIMIT 256",[Source,User]) of
             {ok,_,Rows} -> {ok,[revision_map(Id,V,S,E,N,M,H) || {Id,V,S,E,N,M,H}<-Rows]};
             _ -> {error,unavailable}
         end
     end)
 end).
 original(User,Source,Revision) -> with_revision(User,Source,Revision,fun(C)->
-    case epgsql:equery(C,"SELECT mime,original FROM bright_source_revisions WHERE id=$1 AND source_id=$2 AND owner_id=$3",[Revision,Source,User]) of
+    case bright_sql:equery(C,"SELECT mime,original FROM bright_source_revisions WHERE id=$1 AND source_id=$2 AND owner_id=$3",[Revision,Source,User]) of
         {ok,_,[{Mime,Data}]} -> {ok,#{mime=>Mime,data=>Data}};
         {ok,_,[]} -> {error,not_found}; _ -> {error,unavailable}
     end
 end).
 content(User,Source,Revision) -> with_revision(User,Source,Revision,fun(C)->
-    case epgsql:equery(C,"SELECT state,text_content FROM bright_source_revisions WHERE id=$1 AND source_id=$2 AND owner_id=$3",[Revision,Source,User]) of
+    case bright_sql:equery(C,"SELECT state,text_content FROM bright_source_revisions WHERE id=$1 AND source_id=$2 AND owner_id=$3",[Revision,Source,User]) of
         {ok,_,[{<<"ready">>,Text}]} -> {ok,#{revision_id=>Revision,text=>Text}};
         {ok,_,[_]} -> {error,not_ready};
         {ok,_,[]} -> {error,not_found}; _ -> {error,unavailable}
     end
 end).
 retry(User,Source,Revision) -> with_revision(User,Source,Revision,fun(C)->
-    case epgsql:equery(C,"UPDATE bright_source_revisions SET state='queued',attempts=0,error_code=NULL,lease_token=NULL,lease_until=NULL WHERE id=$1 AND source_id=$2 AND owner_id=$3 AND state='failed'",[Revision,Source,User]) of
+    case bright_sql:equery(C,"UPDATE bright_source_revisions SET state='queued',attempts=0,error_code=NULL,lease_token=NULL,lease_until=NULL WHERE id=$1 AND source_id=$2 AND owner_id=$3 AND state='failed'",[Revision,Source,User]) of
         {ok,1} -> {ok,#{state=><<"queued">>}};
         {ok,0} ->
-            case epgsql:equery(C,"SELECT id FROM bright_source_revisions WHERE id=$1 AND source_id=$2 AND owner_id=$3",[Revision,Source,User]) of
+            case bright_sql:equery(C,"SELECT id FROM bright_source_revisions WHERE id=$1 AND source_id=$2 AND owner_id=$3",[Revision,Source,User]) of
                 {ok,_,[]} -> {error,not_found}; {ok,_,[_]} -> {error,conflict}; _ -> {error,unavailable}
             end;
         _ -> {error,unavailable}
@@ -113,10 +113,10 @@ claim() ->
     case enabled() of
         false -> {error,disabled};
         true -> bright_sql_pool:with_connection(fun(C)->
-            epgsql:equery(C,"UPDATE bright_source_revisions SET state='failed',error_code='worker_unavailable',lease_token=NULL,lease_until=NULL WHERE state='processing' AND lease_until<now() AND attempts>=3",[]),
+            bright_sql:equery(C,"UPDATE bright_source_revisions SET state='failed',error_code='worker_unavailable',lease_token=NULL,lease_until=NULL WHERE state='processing' AND lease_until<now() AND attempts>=3",[]),
             Token = bright_project_auth:new_id(),
             Sql = "WITH candidate AS (SELECT r.id FROM bright_source_revisions r JOIN bright_users u ON u.id=r.owner_id WHERE u.disabled_at IS NULL AND r.attempts<3 AND (r.state='queued' OR (r.state='processing' AND r.lease_until<now())) ORDER BY r.created_at FOR UPDATE OF r SKIP LOCKED LIMIT 1) UPDATE bright_source_revisions r SET state='processing',attempts=r.attempts+1,lease_token=$1,lease_until=now()+interval '30 seconds',error_code=NULL FROM candidate c WHERE r.id=c.id RETURNING r.id,r.source_id,r.owner_id",
-            case epgsql:equery(C,Sql,[Token]) of
+            case bright_sql:equery(C,Sql,[Token]) of
                 {ok,1,_,[{Id,Source,User}]} -> {ok,#{id=>Id,source_id=>Source,owner_id=>User,lease_token=>Token}};
                 {ok,0,_,[]} -> empty;
                 _ -> {error,unavailable}
@@ -132,7 +132,7 @@ finish(#{id:=Id,owner_id:=User,lease_token:=Token},State,Value) ->
                 {failed,E} when is_binary(E) -> {null,E}
             end,
             bright_sql_pool:with_connection(fun(C)->
-                case epgsql:equery(C,"UPDATE bright_source_revisions SET state=$1,text_content=$2,error_code=$3,completed_at=now(),lease_token=NULL,lease_until=NULL WHERE id=$4 AND lease_token=$5 AND state='processing' AND lease_until>now() AND EXISTS (SELECT 1 FROM bright_users WHERE id=$6 AND disabled_at IS NULL)",[atom_to_binary(State),Text,Error,Id,Token,User]) of
+                case bright_sql:equery(C,"UPDATE bright_source_revisions SET state=$1,text_content=$2,error_code=$3,completed_at=now(),lease_token=NULL,lease_until=NULL WHERE id=$4 AND lease_token=$5 AND state='processing' AND lease_until>now() AND EXISTS (SELECT 1 FROM bright_users WHERE id=$6 AND disabled_at IS NULL)",[atom_to_binary(State),Text,Error,Id,Token,User]) of
                     {ok,1} -> ok;
                     {ok,0} -> {error,stale_lease};
                     _ -> {error,unavailable}
@@ -145,7 +145,7 @@ states(User,Project) ->
         false->{error,disabled};
         true->case bright_project_auth:authorize(User,Project) of
             ok->bright_sql_pool:with_connection(fun(C)->
-                case epgsql:equery(C,"SELECT DISTINCT ON(r.source_id) r.source_id,r.id,r.revision,r.state FROM bright_source_revisions r JOIN bright_sources s ON s.id=r.source_id WHERE r.owner_id=$1 AND s.project_id=$2 ORDER BY r.source_id,r.revision DESC",[User,Project]) of
+                case bright_sql:equery(C,"SELECT r.source_id,r.id,r.revision,r.state FROM bright_source_revisions r JOIN bright_sources s ON s.id=r.source_id WHERE r.owner_id=$1 AND s.project_id=$2 AND r.revision=(SELECT max(latest.revision) FROM bright_source_revisions latest WHERE latest.source_id=r.source_id) ORDER BY r.source_id,r.revision DESC",[User,Project]) of
                     {ok,_,Rows}->{ok,[#{source_id=>S,revision_id=>Id,revision=>V,state=>State} || {S,Id,V,State}<-Rows]};
                     _->{error,unavailable}
                 end

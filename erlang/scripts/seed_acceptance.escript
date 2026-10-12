@@ -7,7 +7,7 @@ main([]) ->
     ok = bright_migrate:run(),
     lists:foreach(fun({Email,Password}) ->
         Existing = bright_sql_pool:with_connection(fun(C) ->
-            epgsql:equery(C,"SELECT id FROM bright_users WHERE email=$1",[Email])
+            bright_sql:equery(C,"SELECT id FROM bright_users WHERE email=$1",[Email])
         end),
         case Existing of
             {ok,_,[]} -> {ok,_,_} = bright_session:provision(Email,Password,<<"Acceptance project">>);

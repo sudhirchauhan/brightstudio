@@ -42,15 +42,15 @@ evidence()->
         ?assertEqual({error,not_found},bright_evidence:link(O,maps:get(id,OB),Id)),
         ?assertEqual({error,not_found},bright_evidence:board(O,BId)),
         {ok,_}=bright_evidence:link(U,BId,Id),{ok,_}=bright_evidence:link(U,BId,Id),{ok,#{items:=[_]}}=bright_evidence:board(U,BId),
-        P2=bright_project_auth:new_id(),bright_sql_pool:with_connection(fun(C)->{ok,1}=epgsql:equery(C,"INSERT INTO bright_projects(id,owner_id,title) VALUES($1,$2,'Related project')",[P2,U]) end),
+        P2=bright_project_auth:new_id(),bright_sql_pool:with_connection(fun(C)->{ok,1}=bright_sql:equery(C,"INSERT INTO bright_projects(id,owner_id,title) VALUES($1,$2,'Related project')",[P2,U]) end),
         {ok,Related}=bright_evidence:create_board(U,bright_project_auth:new_id(),#{<<"project_id">>=>P2,<<"title">>=><<"Related board">>}),
         {ok,_}=bright_evidence:link(U,maps:get(id,Related),Id),{ok,#{items:=[#{source_id:=S}]}}=bright_evidence:board(U,maps:get(id,Related)),
         %% Composite owner keys also reject unauthorized links below the domain layer.
-        bright_sql_pool:with_connection(fun(C)->?assertMatch({error,_},epgsql:equery(C,"INSERT INTO bright_evidence_links(board_id,evidence_id,owner_id) VALUES($1,$2,$3)",[maps:get(id,OB),Id,O])) end),
+        bright_sql_pool:with_connection(fun(C)->?assertMatch({error,_},bright_sql:equery(C,"INSERT INTO bright_evidence_links(board_id,evidence_id,owner_id) VALUES($1,$2,$3)",[maps:get(id,OB),Id,O])) end),
         {ok,_}=bright_library:upload(U,S,bright_project_auth:new_id(),#{filename=><<"v2.txt">>,mime=><<"text/plain">>,data=><<"Entirely new text">>}),ok=bright_source_worker:process_one(),
         {ok,[Old]}=bright_evidence:list(U,S,<<>>),?assertEqual(maps:get(id,R),maps:get(revision_id,Old)),
         %% Simulate damaged derived text. Never relocate to matching text in another revision.
-        bright_sql_pool:with_connection(fun(C)->{ok,1}=epgsql:equery(C,"UPDATE bright_source_revisions SET text_content='damaged' WHERE id=$1",[maps:get(id,R)]) end),
+        bright_sql_pool:with_connection(fun(C)->{ok,1}=bright_sql:equery(C,"UPDATE bright_source_revisions SET text_content='damaged' WHERE id=$1",[maps:get(id,R)]) end),
         {ok,Unresolved}=bright_evidence:read(U,Id),?assertEqual(unresolved,maps:get(anchor_state,Unresolved)),
         os:putenv("STUDIO_EVIDENCE_ENABLED","false"),?assertEqual({error,disabled},bright_evidence:read(U,Id))
     after

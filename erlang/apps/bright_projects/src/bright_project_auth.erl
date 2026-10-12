@@ -10,7 +10,7 @@ new_id() ->
     iolist_to_binary(io_lib:format("~8.16.0b-~4.16.0b-~4.16.0b-~4.16.0b-~12.16.0b", [A,B,16#4000 bor C,16#8000 bor D,E])).
 list(User) ->
     bright_sql_pool:with_connection(fun(C) ->
-        case epgsql:equery(C, "SELECT id,title FROM bright_projects WHERE owner_id=$1 ORDER BY created_at,id", [User]) of
+        case bright_sql:equery(C, "SELECT id,title FROM bright_projects WHERE owner_id=$1 ORDER BY created_at,id", [User]) of
             {ok, _, Rows} -> {ok, [#{id => Id, title => Title} || {Id,Title} <- Rows]};
             _ -> {error, unavailable}
         end
@@ -19,7 +19,7 @@ authorize(User, Project) ->
     case uuid(Project) of
         false -> {error, forbidden};
         true -> bright_sql_pool:with_connection(fun(C) ->
-            case epgsql:equery(C, "SELECT id FROM bright_projects WHERE id=$1 AND owner_id=$2", [Project, User]) of
+            case bright_sql:equery(C, "SELECT id FROM bright_projects WHERE id=$1 AND owner_id=$2", [Project, User]) of
                 {ok, _, [_]} -> ok;
                 {ok, _, []} -> {error, forbidden};
                 _ -> {error, unavailable}

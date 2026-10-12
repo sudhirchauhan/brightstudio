@@ -6,7 +6,7 @@
 authenticate_token(Token) when is_binary(Token), byte_size(Token) >= 32, byte_size(Token) =< 128 ->
     Hash = crypto:hash(sha256, Token),
     bright_sql_pool:with_connection(fun(Conn) ->
-        case epgsql:equery(Conn,
+        case bright_sql:equery(Conn,
             "SELECT u.id FROM bright_sessions s JOIN bright_users u ON u.id = s.user_id "
             "WHERE s.token_hash = $1 AND s.revoked_at IS NULL "
             "AND s.expires_at > now() AND u.disabled_at IS NULL",
@@ -21,7 +21,7 @@ authenticate_token(_) -> {error, unauthenticated}.
 
 authorize_workspace(UserId, WorkspaceId, Action) when is_binary(UserId), is_binary(WorkspaceId) ->
     bright_sql_pool:with_connection(fun(Conn) ->
-        case epgsql:equery(Conn,
+        case bright_sql:equery(Conn,
             "SELECT role FROM bright_memberships m JOIN bright_users u ON u.id = m.user_id "
             "WHERE m.user_id = $1::uuid AND m.workspace_id = $2::uuid "
             "AND u.disabled_at IS NULL", [UserId, WorkspaceId]) of
@@ -40,7 +40,7 @@ role_atom(<<"viewer">>) -> viewer;
 role_atom(_) -> unknown.
 
 profile(User) -> bright_sql_pool:with_connection(fun(C) ->
-    case epgsql:equery(C,"SELECT email FROM bright_users WHERE id=$1 AND disabled_at IS NULL",[User]) of
+    case bright_sql:equery(C,"SELECT email FROM bright_users WHERE id=$1 AND disabled_at IS NULL",[User]) of
         {ok,_,[{Email}]} -> {ok,#{email=>Email}};
         {ok,_,[]} -> {error,unauthenticated};
         _ -> {error,unavailable}

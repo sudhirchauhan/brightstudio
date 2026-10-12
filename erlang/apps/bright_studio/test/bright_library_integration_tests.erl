@@ -19,7 +19,7 @@ library()->
         ?assertEqual({error,not_ready},bright_library:content(User,Id,R)),
         {ok,Job}=bright_library:claim(),?assertEqual(R,maps:get(id,Job)),
         %% Simulate a terminated worker and ensure only a fresh fencing token may commit.
-        bright_sql_pool:with_connection(fun(C)->{ok,1}=epgsql:equery(C,"UPDATE bright_source_revisions SET lease_until=now()-interval '1 second' WHERE id=$1",[R]) end),
+        bright_sql_pool:with_connection(fun(C)->{ok,1}=bright_sql:equery(C,"UPDATE bright_source_revisions SET lease_until=now()-interval '1 second' WHERE id=$1",[R]) end),
         {ok,Recovered}=bright_library:claim(),?assertNotEqual(maps:get(lease_token,Job),maps:get(lease_token,Recovered)),
         ?assertEqual({error,stale_lease},bright_library:finish(Job,ready,<<"Stale content">>)),
         ok=bright_library:finish(Recovered,ready,Data),

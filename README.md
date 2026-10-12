@@ -13,7 +13,7 @@ rebar3 as prod release
 
 Use OTP 27 and rebar3 3.27. Dependencies are pinned in `rebar.lock`. PostgreSQL 17 acceptance tests additionally require a disposable DATABASE_URL and `BRIGHT_INTEGRATION_TESTS=true`.
 
-For this cloud workspace, run `bash scripts/cloud-setup.sh` and `bash scripts/cloud-start.sh` from repository root. They use Docker and the existing checkout. See [Milestone 3 acceptance evidence](docs/milestone-3-acceptance.md) for local fixtures, Playwright commands and full-release restart tests.
+For SQLite development in this cloud workspace, run `bash scripts/cloud-sqlite-setup.sh` and `bash scripts/cloud-sqlite-start.sh` from repository root. The original PostgreSQL setup/start helpers remain available for PostgreSQL regression checks. They use Docker and the existing checkout. See [Milestone 3 acceptance evidence](docs/milestone-3-acceptance.md) for local fixtures, Playwright commands and full-release restart tests.
 
 Docker: `docker build -f erlang/Dockerfile -t brightstudio:m3 erlang`. When a cloud proxy supplies a CA bundle, pass it using `--secret id=cloud_ca,src=/etc/ssl/certs/ca-certificates.crt`; TLS verification stays enabled.
 
@@ -30,3 +30,5 @@ The migration runner uses a PostgreSQL advisory lock, numeric versions and trans
 Render staging remains a separate deployment gate; the runbook records current access and provisioning requirements. [Milestone 3 staging and rollback runbook](docs/milestone-3-runbook.md) describes the private DB, health checks, account provisioning and expiry safeguards. Main auto-deploys the existing development service; do not merge until staging gates pass.
 
 For free staging, use `render-milestone-3-free.yaml`. It reuses `brightstudio-m1-staging`, requests free PostgreSQL, and sets `STUDIO_WEB_EXTRACTION_ENABLED=true` so extraction runs asynchronously inside the web service without a paid worker. The setting defaults off. Free web services can sleep, delaying queued extraction until they wake; free PostgreSQL expires and is intended for disposable testing.
+
+SQLite development and the free Render demo are documented in [SQLite development](docs/sqlite-development.md). Use `render-milestone-3-sqlite.yaml` to run the complete demo without an external database or a paid worker. Hosted demo data is disposable.

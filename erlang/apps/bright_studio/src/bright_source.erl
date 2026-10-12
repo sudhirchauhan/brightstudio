@@ -41,10 +41,10 @@ create_valid_key(User,Key,M) ->
 insert(User,Key,#{title := Title,url := Url,kind := Kind,project_id := Project}) ->
     bright_sql_pool:with_connection(fun(C) ->
         Id = bright_project_auth:new_id(),
-        case epgsql:equery(C,"INSERT INTO bright_sources(id,owner_id,project_id,title,url,kind,idempotency_key) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(owner_id,idempotency_key) DO NOTHING RETURNING id",[Id,User,Project,Title,Url,Kind,Key]) of
+        case bright_sql:equery(C,"INSERT INTO bright_sources(id,owner_id,project_id,title,url,kind,idempotency_key) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(owner_id,idempotency_key) DO NOTHING RETURNING id",[Id,User,Project,Title,Url,Kind,Key]) of
             {ok,1,_,[{Id}]} -> {ok,#{id=>Id,title=>Title,url=>Url,kind=>Kind,project_id=>Project}};
             {ok,0,_,[]} ->
-                case epgsql:equery(C,"SELECT id,project_id,title,url,kind FROM bright_sources WHERE owner_id=$1 AND idempotency_key=$2",[User,Key]) of
+                case bright_sql:equery(C,"SELECT id,project_id,title,url,kind FROM bright_sources WHERE owner_id=$1 AND idempotency_key=$2",[User,Key]) of
                     {ok,_,[{Existing,Project,Title,Url,Kind}]} -> {ok,#{id=>Existing,title=>Title,url=>Url,kind=>Kind,project_id=>Project}};
                     {ok,_,[_]} -> {error,conflict};
                     _ -> {error,unavailable}
@@ -63,7 +63,7 @@ read(User,Id) ->
         false -> {error,not_found}
     end.
 query(Sql,Params,Mode) -> bright_sql_pool:with_connection(fun(C) ->
-    case epgsql:equery(C,Sql,Params) of
+    case bright_sql:equery(C,Sql,Params) of
         {ok,_,Rows} ->
             Items = [#{id=>Id,project_id=>Project,title=>Title,url=>Url,kind=>Kind} || {Id,Project,Title,Url,Kind} <- Rows],
             case {Mode,Items} of {read,[Item]} -> {ok,Item}; {read,[]} -> {error,not_found}; {list,_} -> {ok,Items} end;

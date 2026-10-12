@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX bright_revisions_id_source_owner_unique ON bright_source_revisions(id,source_id,owner_id);

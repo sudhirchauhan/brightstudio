@@ -13,6 +13,7 @@ FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libtinfo6 zlib1g libstdc++6 libssl3 util-linux poppler-utils && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build --chown=1000:1000 /app/_build/prod/rel/bright_studio /app
+COPY --chown=1000:1000 --chmod=755 scripts/start-sqlite-dev.sh /app/bin/start-sqlite-dev
 ENV PORT=10000 BRIGHT_ROLE=web
 USER 1000:1000
 EXPOSE 10000

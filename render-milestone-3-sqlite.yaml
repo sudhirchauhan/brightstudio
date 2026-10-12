@@ -1,0 +1,36 @@
+# Disposable free development demo; SQLite data is lost on instance replacement.
+services:
+  - type: web
+    name: brightstudio-m1-staging
+    runtime: docker
+    region: frankfurt
+    plan: free
+    branch: milestone-3
+    autoDeploy: false
+    dockerContext: ./erlang
+    dockerfilePath: ./erlang/Dockerfile
+    dockerCommand: /app/bin/start-sqlite-dev
+    healthCheckPath: /readyz
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:/tmp/brightstudio/development.sqlite
+      - key: BRIGHT_SQLITE_DEVELOPMENT
+        value: "true"
+      - key: BRIGHT_ROLE
+        value: web
+      - key: STUDIO_WEB_EXTRACTION_ENABLED
+        value: "true"
+      - key: STUDIO_HUB_ENABLED
+        value: "true"
+      - key: STUDIO_LIBRARY_ENABLED
+        value: "true"
+      - key: STUDIO_EVIDENCE_ENABLED
+        value: "true"
+      - key: BRIGHT_ORIGIN
+        value: https://brightstudio-m1-staging.onrender.com
+      - key: BRIGHT_BOOTSTRAP_EMAIL
+        value: developer@brightstudio.test
+      - key: BRIGHT_BOOTSTRAP_PASSWORD
+        generateValue: true
+      - key: BRIGHT_BOOTSTRAP_PROJECT
+        value: Development project

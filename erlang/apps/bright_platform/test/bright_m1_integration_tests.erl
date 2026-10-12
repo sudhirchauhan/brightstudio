@@ -10,19 +10,29 @@ integration() ->
     {ok,_} = application:ensure_all_started(crypto),
     ?assertEqual(ok,bright_migrate:run()),
     %% sslmode=require must fail closed when this isolated PostgreSQL server offers no TLS.
-    ?assertEqual({error,ssl_not_available},bright_db:connect(os:getenv("DATABASE_URL") ++ "?sslmode=require")),
+    case os:getenv("DATABASE_URL") of
+        "sqlite:"++_->ok;
+        Url->?assertEqual({error,ssl_not_available},bright_db:connect(Url ++ "?sslmode=require"))
+    end,
     Parent = self(),
     [spawn(fun() -> Parent ! {migration,bright_migrate:run()} end) || _ <- lists:seq(1,3)],
     [receive {migration,Result} -> ?assertEqual(ok,Result) after 15000 -> error(migration_timeout) end || _ <- lists:seq(1,3)],
     ?assertEqual(ok,bright_migrate:run()),
     %% Prove the runner waits for the same advisory lock, rather than merely tolerating replay.
     {ok,LockConn} = bright_db:connect(os:getenv("DATABASE_URL")),
-    {ok,_,_} = epgsql:equery(LockConn,"SELECT pg_advisory_lock($1)",[74190321]),
+    SQLite=bright_sql:sqlite(LockConn),
+    case SQLite of
+        true->{ok,_,_}=bright_sql:squery(LockConn,"BEGIN IMMEDIATE");
+        false->{ok,_,_}=bright_sql:equery(LockConn,"SELECT pg_advisory_lock($1)",[74190321])
+    end,
     spawn(fun() -> Parent ! {blocked_migration,bright_migrate:run()} end),
     receive {blocked_migration,_} -> error(lock_not_held) after 100 -> ok end,
-    {ok,_,_} = epgsql:equery(LockConn,"SELECT pg_advisory_unlock($1)",[74190321]),
+    case SQLite of
+        true->{ok,_,_}=bright_sql:squery(LockConn,"ROLLBACK");
+        false->{ok,_,_}=bright_sql:equery(LockConn,"SELECT pg_advisory_unlock($1)",[74190321])
+    end,
     receive {blocked_migration,Done} -> ?assertEqual(ok,Done) after 15000 -> error(lock_timeout) end,
-    epgsql:close(LockConn),
+    bright_sql:close(LockConn),
     Email = <<(bright_project_auth:new_id())/binary,"@example.test">>,
     {ok,User,Project} = bright_session:provision(Email,<<"Integration-password-123">>,<<"Integration project">>),
     {ok,Token} = bright_session:login(Email,<<"Integration-password-123">>),
@@ -58,12 +68,12 @@ integration() ->
     [ok = bright_sql_pool:checkin(C) || C <- Recovered],
     {ok,ExpiredToken} = bright_session:login(Email,<<"Integration-password-123">>),
     bright_sql_pool:with_connection(fun(C) ->
-        {ok,1} = epgsql:equery(C,"UPDATE bright_sessions SET expires_at=now()-interval '1 second' WHERE token_hash=$1",[crypto:hash(sha256,ExpiredToken)])
+        {ok,1} = bright_sql:equery(C,"UPDATE bright_sessions SET expires_at=now()-interval '1 second' WHERE token_hash=$1",[crypto:hash(sha256,ExpiredToken)])
     end),
     ?assertEqual({error,unauthenticated},bright_identity:authenticate_token(ExpiredToken)),
     {ok,DisabledToken} = bright_session:login(Email,<<"Integration-password-123">>),
     bright_sql_pool:with_connection(fun(C) ->
-        {ok,1} = epgsql:equery(C,"UPDATE bright_users SET disabled_at=now() WHERE id=$1",[User])
+        {ok,1} = bright_sql:equery(C,"UPDATE bright_users SET disabled_at=now() WHERE id=$1",[User])
     end),
     ?assertEqual({error,unauthenticated},bright_identity:authenticate_token(DisabledToken)),
     ?assertEqual({error,unauthenticated},bright_session:login(Email,<<"Integration-password-123">>)).

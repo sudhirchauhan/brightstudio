@@ -7,6 +7,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        backend: [postgres, sqlite]
     services:
       postgres:
         image: postgres:17
@@ -27,6 +30,9 @@ jobs:
       BRIGHT_INSECURE_LOCAL_COOKIE: 'true'
     steps:
       - uses: actions/checkout@v4
+      - name: SQLite development backend
+        if: matrix.backend == 'sqlite'
+        run: echo "DATABASE_URL=sqlite:$GITHUB_WORKSPACE/erlang/_build/ci-development.sqlite" >> "$GITHUB_ENV"
       - uses: erlef/setup-beam@v1
         with:
           otp-version: '27'
@@ -65,7 +71,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: acceptance-failures
+          name: acceptance-failures-${{ matrix.backend }}
           path: |
             test-results/
             /tmp/bright-release.log

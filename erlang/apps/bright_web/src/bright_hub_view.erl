@@ -1,7 +1,11 @@
 -module(bright_hub_view).
 -export([render/0,login/0]).
 head(Title,Script) -> [<<"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>">>,Title,
- <<" &middot; Bright Studio</title><link rel='stylesheet' href='/studio/hub.css'><script defer src='">>,Script,<<"'></script>">>,evidence_script(Script),<<"</head><body><a class='skip' href='#main'>Skip to content</a>">>].
+ <<" &middot; Bright Studio</title><link rel='stylesheet' href='/studio/hub.css'><script defer src='">>,Script,<<"'></script>">>,evidence_script(Script),<<"</head><body><a class='skip' href='#main'>Skip to content</a>">>,development_notice()].
+development_notice()->case os:getenv("BRIGHT_SQLITE_DEVELOPMENT") of
+    "true"-><<"<p class='development-notice' role='note'>Development demo: saved data can reset when the server restarts. Keep a copy of anything you need.</p>">>;
+    _-><<>>
+end.
 evidence_script(<<"/studio/login.js">>)-><<>>;
 evidence_script(_)->case bright_evidence:enabled() of true-><<"<script defer src='/studio/hub/evidence.js'></script>">>;false-><<>> end.
 login() -> [head(<<"Sign in">>,<<"/studio/login.js">>),

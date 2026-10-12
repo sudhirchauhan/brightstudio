@@ -13,31 +13,53 @@ run(Url) ->
     case bright_db:connect(Url) of
         {ok, Conn} ->
             try
-                case migration_files() of
+                case migration_files(Conn) of
                     {error, _} = Error -> Error;
-                    Files -> apply_migrations(Conn, Files)
+                    Files -> case bright_sql:sqlite(Conn) of
+                        true->apply_sqlite_migrations(Conn,Files);
+                        false->apply_migrations(Conn, Files)
+                    end
                 end
-            after epgsql:close(Conn) end;
+            after bright_sql:close(Conn) end;
         Error -> Error
     end.
 
 apply_migrations(Conn, Files) ->
-    case epgsql:equery(Conn, "SELECT pg_advisory_lock($1)", [?LOCK_ID]) of
+    case bright_sql:equery(Conn, "SELECT pg_advisory_lock($1)", [?LOCK_ID]) of
         {ok, _, _} ->
             try
-                case epgsql:squery(Conn, "CREATE TABLE IF NOT EXISTS bright_schema_migrations (version bigint PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())") of
+                case bright_sql:squery(Conn, "CREATE TABLE IF NOT EXISTS bright_schema_migrations (version bigint PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())") of
                     {ok, _, _} -> apply_files(Conn, Files);
                     {error, Reason} -> {error, Reason};
                     Other -> {error, {unexpected_schema_result, Other}}
                 end
-            after epgsql:equery(Conn, "SELECT pg_advisory_unlock($1)", [?LOCK_ID]) end;
+            after bright_sql:equery(Conn, "SELECT pg_advisory_unlock($1)", [?LOCK_ID]) end;
         {error, Reason} -> {error, Reason};
         Other -> {error, {lock_failed, Other}}
     end.
 
-migration_files() ->
+migration_files(Conn) ->
     Priv = code:priv_dir(bright_platform),
-    sort_migration_files(filelib:wildcard(filename:join([Priv, "migrations", "*.sql"]))).
+    Directory=case bright_sql:sqlite(Conn) of true->"sqlite_migrations";false->"migrations" end,
+    sort_migration_files(filelib:wildcard(filename:join([Priv, Directory, "*.sql"]))).
+
+apply_sqlite_migrations(Conn,Files)->
+    case bright_sql:with_transaction(Conn,fun(C)->
+        {ok,_,_}=bright_sql:squery(C,"CREATE TABLE IF NOT EXISTS bright_schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f','now')) )"),
+        lists:foreach(fun(Path)->
+            Version=list_to_integer(filename:basename(Path,".sql")),
+            case bright_sql:equery(C,"SELECT version FROM bright_schema_migrations WHERE version=$1",[Version]) of
+                {ok,_,[_]}->ok;
+                {ok,_,[]}->
+                    {ok,Sql}=file:read_file(Path),
+                    {ok,_,_}=bright_sql:squery(C,Sql),
+                    {ok,1}=bright_sql:equery(C,"INSERT INTO bright_schema_migrations(version) VALUES($1)",[Version])
+            end
+        end,Files),ok
+    end) of
+        ok->ok;
+        {rollback,_}->{error,sqlite_migration_failed}
+    end.
 
 %% Version order is numeric: 2.sql must run before 10.sql.
 %% Reject ambiguous and malformed filenames before running any migration.
@@ -66,18 +88,18 @@ apply_files(Conn, [Path | Rest]) ->
     Base = filename:basename(Path, ".sql"),
     case string:to_integer(Base) of
         {Version, ""} ->
-            case epgsql:equery(Conn, "SELECT version FROM bright_schema_migrations WHERE version = $1", [Version]) of
+            case bright_sql:equery(Conn, "SELECT version FROM bright_schema_migrations WHERE version = $1", [Version]) of
                 {ok, _, [_ | _]} -> apply_files(Conn, Rest);
                 {ok, _, []} ->
                     case file:read_file(Path) of
                         {ok, Sql} ->
-                            case epgsql:squery(Conn, "BEGIN") of
+                            case bright_sql:squery(Conn, "BEGIN") of
                                 {ok, _, _} ->
-                                    case epgsql:squery(Conn, Sql) of
+                                    case bright_sql:squery(Conn, Sql) of
                                         {ok, _, _} ->
-                                            case epgsql:equery(Conn, "INSERT INTO bright_schema_migrations(version) VALUES ($1)", [Version]) of
+                                            case bright_sql:equery(Conn, "INSERT INTO bright_schema_migrations(version) VALUES ($1)", [Version]) of
                                                 {ok, 1} ->
-                                                    case epgsql:squery(Conn, "COMMIT") of
+                                                    case bright_sql:squery(Conn, "COMMIT") of
                                                         {ok, _, _} -> apply_files(Conn, Rest);
                                                         Other -> {error, {commit_failed, Other}}
                                                     end;
@@ -95,5 +117,5 @@ apply_files(Conn, [Path | Rest]) ->
     end.
 
 rollback(Conn, Reason) ->
-    _ = epgsql:squery(Conn, "ROLLBACK"),
+    _ = bright_sql:squery(Conn, "ROLLBACK"),
     {error, Reason}.

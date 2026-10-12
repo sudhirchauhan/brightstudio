@@ -5,14 +5,16 @@ ping(Url) ->
     case connect(Url) of
         {ok, Conn} ->
             try
-                case epgsql:squery(Conn, "SELECT 1") of
+                case bright_sql:squery(Conn, "SELECT 1") of
                     {ok, _, _} -> ok;
                     Other -> {error, {query_failed, Other}}
                 end
-            after epgsql:close(Conn) end;
+            after bright_sql:close(Conn) end;
         Error -> Error
     end.
 
+connect("sqlite:" ++ Path) -> bright_sqlite:start_link(Path);
+connect(<<"sqlite:",Path/binary>>) -> bright_sqlite:start_link(binary_to_list(Path));
 connect(Url) ->
     case parse_url(Url) of
         {ok, #{host := Host, port := Port, user := User,
