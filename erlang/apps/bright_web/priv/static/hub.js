@@ -40,7 +40,7 @@ async function load(quiet = false) {
   } catch(error) { if (version === loadVersion) { $('#empty').hidden = true; status(error.message,true); $('#add').disabled = true; } }
 }
 $('#search').addEventListener('input', render);
-$('#project').addEventListener('change', () => {if(!['/studio/hub/evidence/','/studio/hub/study/'].includes(location.pathname)) load();});
+$('#project').addEventListener('change', () => {sessionStorage.setItem('bright-project',$('#project').value);if(!['/studio/hub/evidence/','/studio/hub/study/','/studio/hub/projects/','/studio/hub/tasks/','/studio/hub/planner/','/studio/hub/account/'].includes(location.pathname)) load();});
 function dialog(existingSource) {
   $('#source-form').reset(); $('#form-status').textContent = ''; key = crypto.randomUUID(); uploadKey = crypto.randomUUID();
   requestData = uploadFingerprint = createdSource = undefined; uploadSource = existingSource;
@@ -129,21 +129,22 @@ $('#logout').addEventListener('click', async () => {
 (async () => {
   document.querySelectorAll('nav a').forEach(a => { if(a.pathname === location.pathname) a.setAttribute('aria-current','page'); });
   try {
-    const session = await api('/studio/api/session'); csrf = session.csrf; libraryEnabled = session.library_enabled; $('#account').textContent = session.email;
+    const session = await api('/studio/api/session'); csrf = session.csrf; libraryEnabled = session.library_enabled; $('#account').textContent = session.display_name||session.email;
     $('#library-notice').textContent = libraryEnabled ? 'Private TXT, PDF and EPUB files, with readable text and immutable revisions.' : 'Metadata only. File reading is currently disabled.';
     const projects = await api('/studio/api/hub/projects');
-    document.dispatchEvent(new CustomEvent('bright-session',{detail:{enabled:session.evidence_enabled,studyEnabled:session.study_enabled,csrf,projects}}));
+    document.dispatchEvent(new CustomEvent('bright-session',{detail:{enabled:session.evidence_enabled,studyEnabled:session.study_enabled,workspaceEnabled:session.workspace_enabled,csrf,projects}}));
     for(const project of projects) { const option = document.createElement('option'); option.value = project.id; option.textContent = project.title; $('#project').append(option); }
+    const preferred=new URLSearchParams(location.search).get('project')||sessionStorage.getItem('bright-project');if(projects.some(p=>p.id===preferred))$('#project').value=preferred;
     if (!projects.length) { status('No projects available. Ask your workspace administrator to provision a project.'); return; }
     if (location.pathname.startsWith('/studio/hub/sources/')) {
       sourceId = location.pathname.split('/').pop();
       const source = await api(`/studio/api/hub/sources/${encodeURIComponent(sourceId)}`);
       $('#heading').textContent = 'Reader'; $('#reader').hidden = false;
       $('#source-title').textContent = source.title; $('#source-kind').textContent = source.kind;
-      $('#project').value = source.project_id; $('#project').disabled = true;
+      $('#project').value = source.project_id;sessionStorage.setItem('bright-project',source.project_id); $('#project').disabled = true;
       if(source.url) { $('#source-url').href = source.url; $('#source-url').hidden = false; }
       status('Source metadata loaded.'); if (libraryEnabled) await loadRevisions();
-    } else if(location.pathname === '/studio/hub/study/') { $('#heading').textContent='Study'; $('#description').textContent='Practice a passage, save a reflection, and return to your progress.'; $('#study-page').hidden=false; status('Practice and resume saved lessons.'); } else if(location.pathname === '/studio/hub/evidence/') { $('#heading').textContent='Evidence'; $('#boards-page').hidden=false; status('Collect pinned quotes and notes on your project boards.'); }
+    } else if(['/studio/hub/projects/','/studio/hub/tasks/','/studio/hub/planner/','/studio/hub/account/'].includes(location.pathname)) { $('#workspace-page').hidden=false; status('Your projects, tasks and account settings.'); } else if(location.pathname === '/studio/hub/study/') { $('#heading').textContent='Study'; $('#description').textContent='Practice a passage, save a reflection, and return to your progress.'; $('#study-page').hidden=false; status('Practice and resume saved lessons.'); } else if(location.pathname === '/studio/hub/evidence/') { $('#heading').textContent='Evidence'; $('#boards-page').hidden=false; status('Collect pinned quotes and notes on your project boards.'); }
     else { $('#library').hidden = false; await load(); }
     setInterval(() => {
       if (document.hidden || $('#dialog').open) return;

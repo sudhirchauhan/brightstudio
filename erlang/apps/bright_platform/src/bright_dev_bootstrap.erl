@@ -27,7 +27,8 @@ main()->
                     {ok,_,[{P}|_]}=bright_sql:equery(C,"SELECT id FROM bright_projects WHERE owner_id=$1 ORDER BY created_at,id",[U]),
                     {U,P}
                 end),
-                ok=bright_dev_samples:run(User,Project);
+                ok=bright_dev_samples:run(User,Project),
+                ok=bright_dev_workspace_samples:run(User,Project);
             _->ok
         end,
         io:format("SQLite development schema and account are ready.~n"),

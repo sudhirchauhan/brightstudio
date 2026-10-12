@@ -40,7 +40,12 @@ role_atom(<<"viewer">>) -> viewer;
 role_atom(_) -> unknown.
 
 profile(User) -> bright_sql_pool:with_connection(fun(C) ->
-    case bright_sql:equery(C,"SELECT email FROM bright_users WHERE id=$1 AND disabled_at IS NULL",[User]) of
+    Sql=case os:getenv("STUDIO_WORKSPACE_ENABLED") of
+        "true"->"SELECT email,display_name,timezone,profile_version FROM bright_users WHERE id=$1 AND disabled_at IS NULL";
+        _->"SELECT email FROM bright_users WHERE id=$1 AND disabled_at IS NULL"
+    end,
+    case bright_sql:equery(C,Sql,[User]) of
+        {ok,_,[{Email,Name,Zone,V}]} -> {ok,#{email=>Email,display_name=>Name,timezone=>Zone,profile_version=>V}};
         {ok,_,[{Email}]} -> {ok,#{email=>Email}};
         {ok,_,[]} -> {error,unauthenticated};
         _ -> {error,unavailable}

@@ -14,7 +14,7 @@ Validation:
 PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium npm run test:e2e
 ```
 
-Integration EUnit runs through the setup helper. The shared integration tests cover sessions, foreign keys, migration serialization, owner isolation, extraction leases, immutable revisions, note conflicts, provenance and connection recovery. PostgreSQL and SQLite use the same domain operations through `bright_sql`; SQLite translates the application's bounded SQL dialect, binds user data, and calculates anchor SHA-256 in Erlang. SQLite migrations have independent files with versions 1–18. Backend switching does not transfer existing records between databases.
+Integration EUnit runs through the setup helper. The shared integration tests cover sessions, foreign keys, migration serialization, owner isolation, extraction leases, immutable revisions, note conflicts, provenance and connection recovery. PostgreSQL and SQLite use the same domain operations through `bright_sql`; SQLite translates the application's bounded SQL dialect, binds user data, and calculates anchor SHA-256 in Erlang. SQLite migrations have independent files with versions 1–23. Backend switching does not transfer existing records between databases.
 
 ## Free Render demo
 
@@ -31,3 +31,5 @@ Sign in at `/studio/login/`; the bootstrap password can be viewed securely by th
 `BRIGHT_DEV_SEED_DATA=true` enables the bundled sample dataset during the opt-in SQLite development initialization. It supplies seven sources (TXT, PDF, EPUB, Unicode, two immutable revisions, an empty Reader and a deliberately damaged PDF), seven evidence items, two populated boards and note history in the private bootstrap account. A per-owner/version completion marker makes startup replay a no-op, preserving subsequent user edits. When Render replaces the disposable database, bootstrap recreates the private account and these samples before readiness succeeds. This restores sample data, not the user's own lost documents or edits. The option is restricted to SQLite development and does not run for PostgreSQL releases.
 
 Milestone 4 adds Study (`STUDIO_STUDY_ENABLED=true`) to the default cloud helpers and the free-demo Blueprint. Migrations 16–18 persist revision-bound passes, attempts, replay receipts and start receipts. Open Study from navigation or use “Study this revision” in the Reader. Existing seeded ready sources support the lesson journey without an external provider.
+
+The workspace milestone enables `STUDIO_WORKSPACE_ENABLED=true` in the cloud helpers/free demo and adds schema versions 19–23. Projects, Tasks, Planner and Account use the same private sessions and SQL backend. The explicit sample bootstrap seeds five labeled owner-scoped tasks without changing account settings or overwriting later task edits.

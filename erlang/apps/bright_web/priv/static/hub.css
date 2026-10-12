@@ -13,3 +13,8 @@ textarea{font:inherit;min-width:0;width:100%;border:1px solid #82998a;border-rad
 #study-picker, #study-passes {margin:1rem 0;}
 #study-source {display:inline-block; margin:1rem 0;}
 #study-source[hidden] {display:none;}
+#project-create,#account-form,#password-form {max-width:600px;margin:24px 0;}
+#planner-controls {margin-top:24px;max-width:450px;}
+#project-list button,#task-list button {margin:6px 8px 6px 0;}
+.task-card p {white-space:pre-wrap;}
+#workspace-status {min-height:2rem;}

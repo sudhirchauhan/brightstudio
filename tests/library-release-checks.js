@@ -13,7 +13,7 @@ function command(role,args){
   assert.equal(result.status,0,`${role} ${args[0]} failed`);return result.stdout;
 }
 async function start(role,enabled=true){
-  if(containers[role]) assert.equal(spawnSync('docker',['exec','-d','-e',`BRIGHT_ROLE=${role}`,'-e',`STUDIO_LIBRARY_ENABLED=${enabled}`,'-e','STUDIO_EVIDENCE_ENABLED=true','-e','STUDIO_STUDY_ENABLED=true','-e','STUDIO_WEB_EXTRACTION_ENABLED=false',...(role==='worker'?['-e','VMARGS_PATH=/app/config/worker.vm.args']:[]),containers[role],release,'foreground']).status,0);
+  if(containers[role]) assert.equal(spawnSync('docker',['exec','-d','-e',`BRIGHT_ROLE=${role}`,'-e',`STUDIO_LIBRARY_ENABLED=${enabled}`,'-e','STUDIO_EVIDENCE_ENABLED=true','-e','STUDIO_STUDY_ENABLED=true','-e','STUDIO_WORKSPACE_ENABLED=true','-e','STUDIO_WEB_EXTRACTION_ENABLED=false',...(role==='worker'?['-e','VMARGS_PATH=/app/config/worker.vm.args']:[]),containers[role],release,'foreground']).status,0);
   else {const log=openSync(`/tmp/bright-${role}-checks.log`,'a');const child=spawn(release,['foreground'],{cwd:root,env:env(role,enabled),detached:true,stdio:['ignore',log,log]});child.unref();}
   for(let i=0;i<40;i++){
     await delay(250);

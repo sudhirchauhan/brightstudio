@@ -1,8 +1,9 @@
 -module(bright_login_limit).
 -behaviour(gen_server).
--export([start_link/0,allow/1,init/1,handle_call/3,handle_cast/2,handle_info/2]).
+-export([start_link/0,allow/1,allow_password/1,init/1,handle_call/3,handle_cast/2,handle_info/2]).
 start_link() -> gen_server:start_link({local,?MODULE},?MODULE,[],[]).
 allow({Ip,_Port}) -> gen_server:call(?MODULE,{allow,Ip}).
+allow_password(User) -> gen_server:call(?MODULE,{allow,{password,User}}).
 init([]) -> {ok,#{}}.
 handle_call({allow,Ip},_,State) ->
     Now = erlang:monotonic_time(second),

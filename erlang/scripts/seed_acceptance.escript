@@ -14,5 +14,7 @@ main([]) ->
             {ok,_,[_]} -> ok
         end
     end,[{<<"owner-a@example.test">>,<<"Milestone-test-password-A">>},
-          {<<"owner-b@example.test">>,<<"Milestone-test-password-B">>}]),
+          {<<"owner-b@example.test">>,<<"Milestone-test-password-B">>},
+          {<<"password-desktop@example.test">>,<<"Password-acceptance-original">>},
+          {<<"password-mobile@example.test">>,<<"Password-acceptance-original">>}]),
     io:format("Acceptance owners are available in the isolated database.~n").

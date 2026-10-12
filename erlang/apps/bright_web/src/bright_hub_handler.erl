@@ -2,7 +2,7 @@
 -behaviour(cowboy_handler).
 -export([init/2]).
 init(Req,Route) ->
-    case {os:getenv("STUDIO_HUB_ENABLED"),(library_route(Route) andalso not bright_library:enabled()) orelse (evidence_route(Route) andalso not bright_evidence:enabled()) orelse (study_route(Route) andalso not bright_study:enabled())} of
+    case {os:getenv("STUDIO_HUB_ENABLED"),(library_route(Route) andalso not bright_library:enabled()) orelse (evidence_route(Route) andalso not bright_evidence:enabled()) orelse (study_route(Route) andalso not bright_study:enabled()) orelse (workspace_route(Route) andalso not bright_workspace:enabled())} of
         {"true",false} ->
             try dispatch(Req,Route)
             catch _:_ -> reply(503,#{error => unavailable},Req,Route) end;
@@ -54,9 +54,17 @@ authorized(Req,Route,User,Token) ->
     end.
 get(Req,session,User,Token) ->
     case bright_identity:profile(User) of
-        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token),library_enabled=>bright_library:enabled(),evidence_enabled=>bright_evidence:enabled(),study_enabled=>bright_study:enabled()},Req,session);
+        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token),library_enabled=>bright_library:enabled(),evidence_enabled=>bright_evidence:enabled(),study_enabled=>bright_study:enabled(),workspace_enabled=>bright_workspace:enabled()},Req,session);
         Error -> error_reply(Error,Req,session)
     end;
+get(Req,workspace_page,_,_) -> html(bright_hub_view:render(),Req,workspace_page);
+get(Req,{workspace_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
+get(Req,workspace_projects,User,_) -> result(bright_workspace:projects(User),Req,workspace_projects);
+get(Req,workspace_project,User,_) -> result(bright_workspace:project(User,cowboy_req:binding(id,Req)),Req,workspace_project);
+get(Req,tasks,User,_) ->
+    Q=cowboy_req:parse_qs(Req),result(bright_tasks:list(User,proplists:get_value(<<"project_id">>,Q,<<>>),proplists:get_value(<<"day">>,Q,<<>>)),Req,tasks);
+get(Req,task,User,_) -> result(bright_tasks:read(User,cowboy_req:binding(id,Req)),Req,task);
+get(Req,account,User,_) -> result(bright_account:read(User),Req,account);
 get(Req,study_page,_,_) -> html(bright_hub_view:render(),Req,study_page);
 get(Req,{study_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
 get(Req,study,User,_) -> result(bright_study:list(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,study);
@@ -98,6 +106,23 @@ get(Req,{asset,Name,Type}=Route,_User,_) ->
         _ -> reply(404,#{error=>not_found},Req,Route)
     end;
 get(Req,Route,_,_) -> reply(405,#{error=>method_not_allowed},Req,Route).
+post(Req,workspace_projects,User,_) ->
+    body(Req,fun(M,R)->created(bright_workspace:create_project(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,workspace_projects) end,workspace_projects);
+post(Req,workspace_project,User,_) ->
+    body(Req,fun(M,R)->result(bright_workspace:edit_project(User,cowboy_req:binding(id,R),cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,workspace_project) end,workspace_project);
+post(Req,tasks,User,_) ->
+    body(Req,fun(M,R)->created(bright_tasks:create(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,tasks) end,tasks);
+post(Req,task,User,_) ->
+    body(Req,fun(M,R)->result(bright_tasks:edit(User,cowboy_req:binding(id,R),cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,task) end,task);
+post(Req,account,User,_) ->
+    body(Req,fun(M,R)->result(bright_account:edit(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,account) end,account);
+post(Req,account_password,User,Token) ->
+    case bright_login_limit:allow_password(User) of
+        false->reply(429,#{error=>rate_limited},Req,account_password);
+        true->body(Req,fun(M,R)->case bright_account:change_password(User,Token,M) of
+            {ok,V}->R1=cowboy_req:set_resp_cookie(<<"bright_session">>,<<>>,R,(cookie_options())#{max_age=>0}),reply(200,V,R1,account_password);
+            Error->error_reply(Error,R,account_password) end end,account_password)
+    end;
 post(Req,study,User,_) ->
     body(Req,fun(M,R)->created(bright_study:start(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,study) end,study);
 post(Req,study_attempts,User,_) ->
@@ -155,6 +180,8 @@ upload_body(Req,Chunks,Size) ->
     end.
 created({ok,Value},Req,Route)->reply(201,Value,Req,Route);
 created(Error,Req,Route)->error_reply(Error,Req,Route).
+workspace_route({workspace_asset,_,_})->true;
+workspace_route(Route)->lists:member(Route,[workspace_page,workspace_projects,workspace_project,tasks,task,account,account_password]).
 study_route({study_asset,_,_})->true;
 study_route(Route)->lists:member(Route,[study_page,study,study_pass,study_attempts]).
 evidence_route({evidence_asset,_,_})->true;
@@ -186,7 +213,7 @@ cookie_options() ->
 result({ok,Value},Req,Route) -> reply(200,Value,Req,Route);
 result(Error,Req,Route) -> error_reply(Error,Req,Route).
 error_reply({error,unauthenticated},Req,Route) ->
-    case cowboy_req:method(Req)=:= <<"GET">> andalso lists:member(Route,[hub,library,reader,evidence_page,study_page]) of
+    case cowboy_req:method(Req)=:= <<"GET">> andalso lists:member(Route,[hub,library,reader,evidence_page,study_page,workspace_page]) of
         true->
             Path=cowboy_req:path(Req),
             Next=case cowboy_req:qs(Req) of <<>>->Path;Qs-><<Path/binary,"?",Qs/binary>> end,
@@ -197,7 +224,7 @@ error_reply({error,unauthenticated},Req,Route) ->
     end;
 error_reply({error,Reason},Req,Route) ->
     {Code,Public} = case Reason of
-        unauthenticated -> {401,unauthenticated}; forbidden -> {403,forbidden};
+        unauthenticated -> {401,unauthenticated}; wrong_password -> {400,wrong_password}; forbidden -> {403,forbidden};
         disabled -> {404,not_found}; quota_exceeded -> {413,quota_exceeded}; not_ready -> {409,not_ready};
         not_found -> {404,not_found}; invalid_input -> {400,invalid_input}; conflict -> {409,conflict};
         _ -> {503,unavailable}

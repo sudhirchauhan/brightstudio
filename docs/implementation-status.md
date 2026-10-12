@@ -7,7 +7,7 @@ The original roadmap is [Full UI-first Erlang/OTP Delivery Plan](bright-studio-f
 | Slice | Original scope | Current status | Remaining work |
 |---|---|---|---|
 | 0 | Foundation and design | OTP/Cowboy application, responsive Hub and free staged demo implemented | Broader product design acceptance and production operations |
-| 1 | Account and workspace parity | Private password login, sessions, project selection and owner authorization implemented | Legacy login/recovery/import, project/task management and planner parity |
+| 1 | Account and workspace | Private sessions, project create/rename, tasks, daily planning, display names/timezones and current-password changes implemented and locally verified | Hosted workspace release, user design acceptance, recovery delivery/membership administration and production import/cutover |
 | 2 | Library and Reader | Uploads, private originals, immutable revisions, TXT/PDF/EPUB extraction and extracted-text Reader implemented; demo verified | Layout-faithful reading, remote imports and production durability are not claimed |
 | 3 | Evidence and notes | Exact revision-pinned quotes, UTF-8 anchors, annotations, versioned edits/history and project boards implemented; demo verified | Product acceptance and production release gates |
 | 4 | Study workflow | Revision-pinned recall lessons, attempts, feedback, reflection gate and resume implemented; local and hosted desktop/mobile checks passed | User design acceptance and production durability |
@@ -22,7 +22,7 @@ Milestone 1 delivered the Hub/authentication/source-metadata walking skeleton, n
 
 ## Current development and deployed state
 
-- SQLite development is implemented alongside the PostgreSQL backend. Application/domain logic remains Erlang/OTP. Versioned SQLite migrations cover versions 1–18; PostgreSQL migrations and TLS checks remain intact.
+- SQLite development is implemented alongside the PostgreSQL backend. Application/domain logic remains Erlang/OTP. Versioned SQLite migrations cover versions 1–23; PostgreSQL migrations and TLS checks remain intact.
 - Default cloud development uses `scripts/cloud-sqlite-setup.sh` and `scripts/cloud-sqlite-start.sh`, with the `bright-sqlite-dev` container, a retained workspace SQLite file and supervised extraction in the web VM. Existing PostgreSQL files/volumes are preserved.
 - Render service: `brightstudio-m1-staging` (`srv-db5qa5bl550s73b1qu40`), Frankfurt, **free**, `milestone-3`, auto-deploy off. Live application commit: `a9e6f1cfda3dad52269316ea5b2923e5f92688c7`; deploy `dep-db69sm7avr4c73amhqbg`. `/readyz` is the deployment health check.
 - URL: https://brightstudio-m1-staging.onrender.com/studio/login/ . Hub, Library, Evidence, Study and web extraction are enabled. A private getting-started source, note and board were added through the real hosted APIs.
@@ -49,3 +49,7 @@ The seeded development demo now restores its bundled samples after a free SQLite
 ## Milestone 4 hosted release
 
 Study is live at application SHA `a9e6f1cfda3dad52269316ea5b2923e5f92688c7`, deploy `dep-db69sm7avr4c73amhqbg`, on the existing free service. Actual Chromium desktop/mobile hosted checks passed signed-out Study → sign-in → Study, private UI upload/extraction, revision-pinned start, wrong/correct answers, reload/resume, reflection completion, completed review, responsive layout and sign-out/API privacy. `/healthz` and `/readyz` return 200. See [Milestone 4](milestone-4-plan.md). User design acceptance and production storage/cutover remain pending.
+
+## Current workspace milestone
+
+The user requested direct Erlang implementation without legacy-history comparison. Project/task/daily-planner/account features are implemented; local SQL, browser, password and restart checks passed. See [current milestone plan](workspace-planner-plan.md). [UI alignment with the original mocks](ui-alignment-plan.md) is now the next dedicated milestone, before Focus. Original visual-reference matching remains pending; the functional UI is not claimed to match those mocks.

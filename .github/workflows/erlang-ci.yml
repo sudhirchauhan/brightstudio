@@ -27,6 +27,7 @@ jobs:
       STUDIO_LIBRARY_ENABLED: 'true'
       STUDIO_EVIDENCE_ENABLED: 'true'
       STUDIO_STUDY_ENABLED: 'true'
+      STUDIO_WORKSPACE_ENABLED: 'true'
       BRIGHT_ORIGIN: http://127.0.0.1:10000
       BRIGHT_INSECURE_LOCAL_COOKIE: 'true'
     steps:
@@ -68,7 +69,25 @@ jobs:
           VMARGS_PATH="$PWD/erlang/config/worker.vm.args" erlang/_build/prod/rel/bright_studio/bin/bright_studio ping
           npm run test:e2e
       - name: Release restart, gates and dependency failure
-        run: node tests/release-checks.js && node tests/library-release-checks.js && node tests/evidence-release-checks.js && node tests/study-release-checks.js
+        run: |
+          erlang/_build/prod/rel/bright_studio/bin/bright_studio stop
+          erlang/_build/prod/rel/bright_studio/bin/bright_studio foreground > /tmp/bright-release.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:10000/readyz; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:10000/readyz
+          node tests/release-checks.js && node tests/library-release-checks.js && node tests/evidence-release-checks.js && node tests/study-release-checks.js && node tests/workspace-release-checks.js
+      - name: Password UI and session revocation (isolated fixture accounts)
+        run: |
+          erlang/_build/prod/rel/bright_studio/bin/bright_studio stop
+          erlang/_build/prod/rel/bright_studio/bin/bright_studio foreground > /tmp/bright-release.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:10000/readyz; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:10000/readyz
+          node tests/account-password-ui.js
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
