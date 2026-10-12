@@ -41,3 +41,7 @@ Milestone 1 delivered the Hub/authentication/source-metadata walking skeleton, n
 - Full hosted desktop/mobile browser acceptance and user design acceptance remain separate checks. GitHub CI now has PostgreSQL/SQLite matrix jobs; no GitHub-hosted execution result is asserted here.
 
 See [SQLite development](sqlite-development.md), the milestone acceptance/runbook documents, and [Revised delivery plan](revised-delivery-plan.md).
+
+## Hosted browser acceptance update
+
+The seeded development demo now restores its bundled samples after a free SQLite instance reset. Live application SHA `707b20a7fa6d92fdc463b376805ac5acb35e11ce`, deploy `dep-db657sl9fdbs73erqff0`, passed actual public-site Chromium desktop/mobile-viewport journeys for login, all sample formats, highlights, revision history, boards, note history, fresh UI uploads/annotations/edits, private downloads, reload persistence and sign-out. 34 SQLite EUnit tests passed, including sample replay preserving user-edited notes. See [hosted demo acceptance](hosted-demo-acceptance.md). User design acceptance, other-browser/device checks and production release gates remain outstanding.

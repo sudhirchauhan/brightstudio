@@ -1,0 +1,32 @@
+# Hosted SQLite demo acceptance — 2026-10-12
+
+Target: https://brightstudio-m1-staging.onrender.com . Render service `srv-db5qa5bl550s73b1qu40`, free plan, application SHA `707b20a7fa6d92fdc463b376805ac5acb35e11ce`, live deploy `dep-db657sl9fdbs73erqff0`. Main and the original main-linked service remain unchanged.
+
+The initial live browser check found an empty Library despite successful login: manually seeded data was no longer present in the disposable SQLite instance. The opt-in development bootstrap now restores versioned bundled samples when the database is recreated. Its completion marker preserves user edits on replay. It restores samples, not lost user documents; the UI continues to display the free-hosting reset notice.
+
+## Checks actually executed
+
+A real headless Chromium 151 browser opened the public HTTPS site, signed in with the private bootstrap account, and exercised the following at desktop 1280×800 and mobile viewport 390×844:
+
+| Journey | Result |
+|---|---|
+| Private sign-in and seeded Library | Passed |
+| All seven sample sources and development reset notice visible | Passed in both viewports |
+| TXT, Unicode, PDF and EPUB text displayed with seeded highlights | Passed in both viewports |
+| Revision selector and earlier-revision evidence | Passed in both viewports |
+| Empty Reader and upload action | Passed in both viewports |
+| Deliberately damaged PDF, truthful failure and retry | Passed in both viewports |
+| Populated board, note versions and pinned Reader link | Passed in both viewports |
+| New source/file upload through the UI | Passed in both viewports |
+| Keyboard quote capture, note creation and edit | Passed in both viewports |
+| Board linking, exact private download bytes and reload persistence | Passed in both viewports |
+| No horizontal overflow on checked pages | Passed in both viewports |
+| Sign-out and no uncaught page JavaScript errors | Passed |
+
+Two additional browser-test sources/notes were created in the development account. Existing seed notes were not overwritten. Library screenshots were captured locally during the run. Browser HTTPS verification stayed enabled; the existing cloud proxy CA was imported into Chromium's active NSS trust store to resolve the initial environment certificate-trust failure. No credential or session values were written into the report or screenshots.
+
+34 SQLite EUnit/domain/integration tests passed, including the new sample bootstrap check: seven sources, six ready and one intentionally failed revision, seven resolved evidence items, two boards, note history, repeatability and preservation of a user-edited note. The packaged clean-VM bootstrap also initialized the sample dataset successfully before HTTP startup.
+
+## Limits
+
+This is Chromium desktop/mobile-viewport acceptance, not a claim of Safari, native mobile devices, production durability or complete legacy parity. Free Render instance replacement can still erase user-created data. The PostgreSQL backend and the main deployment were not changed by the sample-loader fix. No paid services were provisioned.
