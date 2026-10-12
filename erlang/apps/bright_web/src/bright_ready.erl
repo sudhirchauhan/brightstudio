@@ -11,7 +11,8 @@ check() ->
                         BaseVersions = case bright_library:enabled() of true->[2,3,4,5,6,7,8,9];false->[2,3,4,5,6,7] end,
                         EvidenceVersions=case bright_evidence:enabled() of true->BaseVersions++[10,11,12,13,14,15];false->BaseVersions end,
                         StudyVersions=case bright_study:enabled() of true->EvidenceVersions++[16,17,18];false->EvidenceVersions end,
-                        Versions=case bright_workspace:enabled() of true->StudyVersions++[19,20,21,22,23];false->StudyVersions end,
+                        WorkspaceVersions=case bright_workspace:enabled() of true->StudyVersions++[19,20,21,22,23];false->StudyVersions end,
+                        Versions=case bright_focus:enabled() of true->lists:usort(WorkspaceVersions++lists:seq(2,28));false->WorkspaceVersions end,
                         bright_sql_pool:with_connection(fun(C) ->
                             case bright_sql:equery(C,"SELECT count(*) FROM bright_schema_migrations WHERE version=ANY($1::bigint[])",[Versions]) of
                                 {ok,_,[{Count}]} when Count=:=length(Versions) -> ok;
