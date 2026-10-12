@@ -32,3 +32,5 @@ Render staging remains a separate deployment gate; the runbook records current a
 For free staging, use `render-milestone-3-free.yaml`. It reuses `brightstudio-m1-staging`, requests free PostgreSQL, and sets `STUDIO_WEB_EXTRACTION_ENABLED=true` so extraction runs asynchronously inside the web service without a paid worker. The setting defaults off. Free web services can sleep, delaying queued extraction until they wake; free PostgreSQL expires and is intended for disposable testing.
 
 SQLite development and the free Render demo are documented in [SQLite development](docs/sqlite-development.md). Use `render-milestone-3-sqlite.yaml` to run the complete demo without an external database or a paid worker. Hosted demo data is disposable.
+
+See the [original roadmap and current status](docs/implementation-status.md) and [revised delivery plan](docs/revised-delivery-plan.md) for the remaining rewrite work and next Study milestone.
