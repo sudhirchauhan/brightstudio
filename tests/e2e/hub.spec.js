@@ -9,7 +9,7 @@ async function login(request, who = email, secret = password) {
 test('anonymous users and unauthenticated assets are denied',async({request})=>{
   const paths=['/studio/hub/','/studio/hub/library/','/studio/hub/evidence/','/studio/hub/sources/00000000-0000-4000-8000-000000000000?revision=00000000-0000-4000-8000-000000000001'];
   for(const path of paths){const response=await request.get(path,{maxRedirects:0});expect(response.status()).toBe(302);expect(response.headers().location).toBe('/studio/login/?next='+encodeURIComponent(path));expect(response.headers()['cache-control']).toBe('no-store');}
-  for(const path of ['/studio/hub/hub.js','/studio/hub/evidence.js','/studio/api/hub/projects','/studio/api/hub/sources']) expect((await request.get(path)).status()).toBe(401);
+  for(const path of ['/studio/hub/hub.js','/studio/hub/ui.js','/studio/hub/evidence.js','/studio/api/hub/projects','/studio/api/hub/sources']) expect((await request.get(path)).status()).toBe(401);
 });
 test('direct Library link returns to Library after sign-in',async({page})=>{
   await page.goto('/studio/hub/library/');await expect(page).toHaveURL(/\/studio\/login\/\?next=/);
@@ -64,7 +64,7 @@ test('loading, empty, validation and dependency error states',async({page})=>{
   let releaseLoading; const loading = new Promise(resolve => { releaseLoading = resolve; });
   await page.route('**/studio/api/hub/sources?*',async route=> { await loading; await route.fulfill({status:200,contentType:'application/json',body:'[]'}); });
   await page.goto('/studio/hub/library/');
-  await expect(page.getByRole('status').first()).toContainText('Loading sources');
+  await expect(page.locator('#status')).toContainText('Loading sources');
   releaseLoading();
   await expect(page.getByText('No sources yet.',{exact:false})).toBeVisible();
   await page.getByRole('button',{name:'Add Source'}).click();
@@ -72,6 +72,6 @@ test('loading, empty, validation and dependency error states',async({page})=>{
   expect(await page.getByLabel('Title',{exact:true}).evaluate(e=>e.validity.valueMissing)).toBe(true);
   await page.keyboard.press('Escape');
   await page.route('**/studio/api/hub/sources?*',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":"unavailable"}'}));
-  await page.reload(); await expect(page.getByRole('status').first()).toContainText('database is unavailable');
+  await page.reload(); await expect(page.locator('#status')).toContainText('database is unavailable');
   await expect(page.getByRole('button',{name:'Add Source'})).toBeDisabled();
 });

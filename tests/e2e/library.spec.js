@@ -47,10 +47,11 @@ test('keyboard upload, readable text, revision selection and private download',a
   await page.getByRole('button',{name:'Save source'}).click();await expect(page.getByRole('dialog')).not.toBeVisible();await page.getByRole('link',{name:title,exact:true}).click();
   await expect(page.getByRole('article',{name:'Source text'})).toContainText('A private reading paragraph.',{timeout:15000});
   await expect(page.locator('#reading-text script')).toHaveCount(0);
-  const downloadEvent=page.waitForEvent('download');await page.getByRole('link',{name:'Download original'}).click();const download=await downloadEvent;expect(fs.readFileSync(await download.path())).toEqual(original);
+  if(!await page.locator('#reader-tools').evaluate(el=>el.open))await page.getByText('Source options',{exact:true}).click();const downloadEvent=page.waitForEvent('download');await page.getByRole('link',{name:'Download original'}).click();const download=await downloadEvent;expect(fs.readFileSync(await download.path())).toEqual(original);
   await page.getByRole('button',{name:'Upload a revision'}).focus();await page.keyboard.press('Enter');await expect(page.locator('#file')).toBeFocused();
   await page.locator('#file').setInputFiles({name:'revised.txt',mimeType:'text/plain',buffer:Buffer.from('A revised reading paragraph.')});await page.getByRole('button',{name:'Upload file',exact:true}).click();
   await expect(page.getByRole('article',{name:'Source text'})).toContainText('A revised reading paragraph.',{timeout:15000});
+  expect(new URL(page.url()).searchParams.get('revision')).toBe(await page.locator('#revision').inputValue());
   const options=await page.locator('#revision option').evaluateAll(items=>items.map(item=>({value:item.value,text:item.textContent})));expect(options).toHaveLength(2);
   await page.getByLabel('Revision',{exact:true}).selectOption(options.find(item=>item.text.startsWith('Revision 1')).value);
   await expect(page.getByRole('article',{name:'Source text'})).toContainText('A private reading paragraph.');await page.reload();await expect(page.getByRole('article',{name:'Source text'})).toContainText('A private reading paragraph.');
@@ -65,7 +66,7 @@ test('PDF and EPUB extraction produce readable content',async({request,page})=>{
 test('corrupt file failure is truthful and retry retains the same original',async({request,page})=>{
   const {source,headers}=await create(request,`Failed PDF ${crypto.randomUUID()}`),data=Buffer.from('%PDF-not-a-readable-document');
   const uploaded=await upload(request,source,headers,data,'application/pdf','corrupt.pdf');expect(uploaded.status()).toBe(201);const revision=await uploaded.json();
-  await page.goto(`/studio/hub/sources/${source.id}`);await expect(page.locator('#reading-status')).toContainText('could not be read',{timeout:15000});await expect(page.getByRole('article',{name:'Source text'})).toBeEmpty();
+  await page.goto(`/studio/hub/sources/${source.id}`);await expect(page.locator('#reading-status')).toContainText('could not be read',{timeout:15000});await expect(page.locator('#reading-text')).toBeEmpty();
   await page.getByRole('button',{name:'Retry extraction'}).click();await expect(page.locator('#reading-status')).toContainText('could not be read',{timeout:15000});
   expect(await(await request.get(`/studio/api/hub/sources/${source.id}/revisions/${revision.id}/original`)).body()).toEqual(data);
 });

@@ -16,7 +16,7 @@ The first UI features are available now: sign in, select the development project
 | 2 | Resolve issues found in Milestones 1–3 | Clear empty/loading/error states, predictable navigation and reliable reading/annotation | Reproduce and fix actual issues; rerun affected checks; publish a verified commit |
 | 3 | Milestone 4: Study workflow | Open a lesson from a source, answer prepared questions, see feedback and resume progress | Ownership, immutable revision binding, correct gates, idempotent attempts, restart behavior and usable desktop/mobile UI |
 | 4 | Account, workspace and planner in Erlang | Manage projects/tasks, plan a day and maintain account settings | Owner/version/retry/restart checks and usable desktop/mobile journeys; user requested direct Erlang implementation without legacy-history comparison |
-| 5 | UI alignment milestone | Existing screens match the original UI mocks across desktop/mobile | Obtain visual reference, screen-by-screen design comparison, visual checks and user design acceptance |
+| 5 | UI alignment milestone | Existing screens adopt the approved Quiet Studio concepts across desktop/mobile | Approved new JPG concepts, screen/state comparison, visual checks and final deployed UI acceptance |
 | 6 | Milestone 5: Focus | Start/resume/complete a focus session linked to learning work | Durable checkpoints, valid state transitions, duplicate-completion prevention and restart tests |
 | 7 | Milestone 6: Documents | Draft cited blocks, resolve edit conflicts and export | Revision/provenance checks, compare-and-swap edits and export acceptance |
 | 8 | AI, audio/capture and offline/sync | Grounded assistance, private capture and reconnectable work | Provider/cost configuration within the free-only constraint, bounded jobs, replay/conflict and authorization checks |
@@ -56,15 +56,15 @@ The user requested direct Erlang implementation without legacy-history investiga
 
 ## New milestone: UI alignment with original mocks
 
-This milestone follows the current account/workspace/planner work and precedes Focus. The current functional UI has not been accepted as a match for the original visual designs.
+This milestone follows the current account/workspace/planner work and precedes Focus. The user approved the new Quiet Studio JPG concepts on 2026-10-12 and authorized applying them to the app. This is the visual reference for the milestone; it does not claim recovery of unseen originals.
 
-1. Locate the user-approved original visual mocks and identify their desktop/mobile variants. The repository currently has written mock descriptions but no discovered visual design artifacts. A reference link/file path has been requested.
+1. Use the approved JPGs in `design/mocks/jpg` and `design/mocks/quiet-studio.html`, covering Workspace, fullscreen Reader, fullscreen Study and mobile Study.
 2. Inventory Hub, sign-in, Library, Reader, Evidence, Study, Projects, Tasks, Planner and Account against those mocks. Record concrete differences and screen/state acceptance criteria in a UI comparison document.
 3. Align the application shell, navigation, typography, colors, spacing, components, source/task cards, Reader/Evidence panels, lesson layout, forms and dialogs with the reference. Preserve private authentication and committed server behavior.
 4. Implement the specified loading, empty, error, disabled, conflict and completed states; check narrow/wide layouts, keyboard use, focus and readable contrast. Use design references for visual decisions, not invented claims of matching unseen mocks.
 5. Run representative functional regressions and visual desktop/mobile comparisons, publish a known SHA to the same free staging service, and obtain user design acceptance before calling UI alignment complete.
 
-UI alignment is a separate milestone from adding features. Work that can be prepared without the visual reference may proceed, but exact matching remains pending until the reference is available. No paid hosting or design tool is authorized or required by this plan.
+UI alignment is a separate milestone from adding features. The approved new reference is available; applying it and verifying the deployed app is now the active work. No paid hosting or design tool is authorized or required by this plan.
 
 Detailed current contracts and release checks: [Account/workspace/planner](workspace-planner-plan.md). Dedicated next milestone: [UI alignment with original mocks](ui-alignment-plan.md).
 

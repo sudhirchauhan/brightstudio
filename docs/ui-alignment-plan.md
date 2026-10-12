@@ -1,4 +1,4 @@
-# UI alignment milestone — original mocks
+# UI alignment milestone — approved Quiet Studio design
 
 This milestone was requested after the account/workspace/planner milestone began. It follows that work and precedes Focus. Functional delivery so far does not establish visual equivalence to the original mocks.
 
@@ -19,7 +19,7 @@ Cover the shell/navigation, sign-in, Overview, Library/Add Source, Reader, Evide
 
 ## Current status
 
-New concept mocks created; visual design acceptance pending. The preceding account/workspace/planner milestone is deployed and functionally verified on desktop/mobile. No paid service, provider or design tool is required by this milestone. See [current delivery plan](revised-delivery-plan.md).
+The user approved the new JPG concepts with “look good, go ahead” on 2026-10-12. Application implementation and release validation are in progress; final acceptance of the deployed UI remains separate. The preceding account/workspace/planner milestone is deployed and functionally verified on desktop/mobile. No paid service, provider or design tool is required by this milestone. See [current delivery plan](revised-delivery-plan.md).
 
 ## New visual reference — 2026-10-12
 
@@ -27,10 +27,39 @@ New concept mocks created; visual design acceptance pending. The preceding accou
 
 The design uses warm-white surfaces, restrained teal accents, thin dividers, a compact navigation rail, generous spacing and readable serif source text. Study presents one question and one main action. Workspace navigation/account/project chrome disappears in distraction-free reading and Study modes. Browser fullscreen is independent of the activity: enter through an explicit control, leave through a discoverable exit or Escape, and keep source/revision context visible. Evidence notes open only when requested.
 
-`design/mocks/quiet-studio.html` is a standalone interactive concept using fictional sources and local sample interactions, with no account/database changes or saved progress. Native browser fullscreen, chrome hiding, Reader/Study switching, sample feedback and mobile width were verified during JPG export. The image-generated presentation board uses a future reflective question layout; the interactive sample uses deterministic missing-word recall compatible with the current Study domain. Final question/feedback layouts should be agreed during design review. These mocks have not been deployed to the application.
+`design/mocks/quiet-studio.html` is a standalone interactive concept using fictional sources and local sample interactions, with no account/database changes or saved progress. Native browser fullscreen, chrome hiding, Reader/Study switching, sample feedback and mobile width were verified during JPG export. The image-generated presentation board uses a future reflective question layout; the interactive sample uses deterministic missing-word recall compatible with the current Study domain. Final question/feedback layouts should be agreed during design review. The concepts are the approved application design reference. The implementation preserves deterministic missing-word recall rather than inventing the reflective questions illustrated in the presentation board.
 
 ## Browser gallery fallback
 
 The chat/workspace image viewer displayed “No image” despite valid JPG files. Mock files were made readable and a separate `/studio/mockups/` gallery was added for ordinary-browser viewing. The gallery and its fixed JPG/CSS assets are enabled only with `STUDIO_UI_MOCKS_ENABLED=true`; the default is off. They contain fictional design content and require no account/session. Public preview assets can be embedded; existing private application pages/APIs retain their original authentication and security headers. No upload, filesystem binding, private source image or account data is exposed by the gallery.
 
 The browser gallery is live at https://brightstudio-m1-staging.onrender.com/studio/mockups/ . Application SHA `249d288256b69fc0cc4676fc1a6dc706262ab387`, Render deploy `dep-db6h1laj9qps73c9vlj0`, passed real Chromium desktop/mobile checks: all five JPGs decode, MIME types are `image/jpeg`, remote byte hashes match the exported files, the page fits narrow/wide viewports, no page errors occur, no session is created, and account APIs remain 401. The disabled gallery/CSS/JPG gate returns 404 and unsupported methods 405. This browser link is the reliable fallback for the chat image viewer's “No image” failure. The existing service remains free and the application UI itself has not yet adopted the proposed design.
+
+
+## Application implementation — 2026-10-12
+
+Approved reference: the five JPGs above and their interactive Quiet Studio prototype. This approval authorizes implementing that direction; it does not establish equivalence to an unseen original mock set.
+
+| Screen | Application change | Reference/acceptance |
+|---|---|---|
+| Sign-in | Compact warm-white form, serif wordmark, shared buttons/inputs | Extended shared design; private return links and validation retained |
+| Overview | Ready-source reading action, recent source rows, revision-pinned Study action | Workspace concept; actions use real owned sources rather than fictional data |
+| Library/Add Source | Flat source rows, quiet search, compact upload dialog | Workspace components extended to loading, empty, failure and disabled states |
+| Reader | Centered serif text, independent reading/fullscreen controls, pinned context bar, source options | Fullscreen Reader concept; no fabricated reading-position bar or bookmark persistence |
+| Evidence | On-demand note drawer, keyboard quote finding, selection capture, existing edit/history/link actions | Reader concept; exact UTF-8 anchors, revisions and conflicts retained |
+| Boards | Shared shell, restrained cards/forms and revision links | Extended shared design; loading/empty/errors retained |
+| Study | One current question, source context/progress, recall/reflection/completed layouts, independent mode/fullscreen controls | Study/mobile concept adapted to the existing deterministic domain |
+| Projects | Quiet project cards and create/rename forms | Shared design extension; saved versions and receipts retained |
+| Tasks/Planner | Divided task rows, quiet actions, date/filter controls and dialogs | Shared design extension; civil-date and timezone behavior retained |
+| Account | Shared profile/password forms and readable errors | Shared design extension; all-session revocation and password checks retained |
+
+Fullscreen is requested only through a user click. An exit control, Escape and browser-driven exits restore the prior reading/study mode. Unsupported or denied fullscreen preserves a usable distraction-free view with a visible message. Study focus starts when an actual lesson opens; back to lessons restores navigation. Changing modes does not rewrite source revision, answer draft, committed progress or notes. Failed lesson refreshes retain the active lesson/draft and its exit controls.
+
+Mobile navigation uses an explicit Menu/Close control, trapped keyboard focus, an inert background and Escape focus return. Notes open only on request or after an evidence save and return focus on close. Existing feature flags and private page/API boundaries remain active; the public fictional mock gallery remains separate from the signed-in app.
+
+Visual baselines cover sign-in, Overview, Library, focused Reader and Study on desktop/mobile. They are reviewed Linux Chromium 151 snapshots, with only variable account/project/status fields masked. Run pixel comparisons with `BRIGHT_VISUAL_BASELINES=true PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium npm run test:e2e`. Other browser runners execute the same interaction/layout checks and capture screenshots without asserting cross-version pixel equality. Baselines are regression references for this approved implementation; they are not pixel-equivalence claims for the generated presentation board. Final deployed design acceptance remains for the user.
+
+
+## Local validation
+
+The Erlang production release assembled successfully. All 46 desktop/mobile Playwright cases passed in a new isolated SQLite database, including real uploads/extraction/downloads, quote/Unicode provenance, note/board conflicts, immutable Study receipts/resume, tasks/planner/profile and private authentication. Existing development data was preserved; earlier repeated fixture runs had exhausted its account revision quota. After the final Overview action was added, all six UI cases were rerun, the two Overview baselines were reviewed/updated, and a separate comparison run checked the ten unchanged/final desktop/mobile baselines. No quota or security limit was weakened. PostgreSQL domain logic/migrations were not changed by this UI milestone; earlier SQL evidence remains historical rather than a new SQL test claim.

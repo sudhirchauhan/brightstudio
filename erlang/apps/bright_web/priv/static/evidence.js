@@ -71,7 +71,7 @@
     event.preventDefault();const note=$('#evidence-note').value,data=editItem?{note,expected_version:editItem.version}:{...selection,note};
     const payload=JSON.stringify(data);if(savePayload!==undefined&&savePayload!==payload)saveKey=crypto.randomUUID();savePayload=payload;
     $('#evidence-save').disabled=true;$('#evidence-cancel').disabled=true;$('#evidence-form-status').textContent='Saving…';
-    try{await post(editItem?`/studio/api/hub/evidence/${editItem.id}/notes`:'/studio/api/hub/evidence',data,saveKey);$('#evidence-dialog').close();if(isBoards)await openBoard(new URLSearchParams(location.search).get('board'));else await loadEvidence();}
+    try{await post(editItem?`/studio/api/hub/evidence/${editItem.id}/notes`:'/studio/api/hub/evidence',data,saveKey);$('#evidence-dialog').close();if(isBoards)await openBoard(new URLSearchParams(location.search).get('board'));else {await loadEvidence();document.dispatchEvent(new CustomEvent('bright-evidence-saved'));}}
     catch(error){$('#evidence-form-status').textContent=error.message;if(error.status===409&&editItem){$('#evidence-form-status').append(button('Reload latest note',async()=>{
       try{const latest=await api(`/studio/api/hub/evidence/${editItem.id}`);editItem=latest;saveKey=crypto.randomUUID();savePayload=undefined;
         $('#evidence-form-status').replaceChildren(el('p',`Latest version ${latest.version}: ${latest.note||'(empty note)'}`),el('p','Your draft is still in the field. Review it before saving against this version.'));$('#evidence-dialog-title').textContent=`Edit note · Version ${latest.version}`;

@@ -17,6 +17,7 @@ start_link() ->
         {"/studio/login/", bright_hub_handler, login_page},
         {"/studio/login.js", bright_hub_handler, {public_asset,"login.js",<<"text/javascript">>}},
         {"/studio/hub.css", bright_hub_handler, {public_asset,"hub.css",<<"text/css">>}},
+        {"/studio/hub/ui.js", bright_hub_handler, {asset,"ui.js",<<"text/javascript">>}},
         {"/studio/hub/hub.js", bright_hub_handler, {asset,"hub.js",<<"text/javascript">>}},
         {"/studio/hub/", bright_hub_handler, hub},
         {"/studio/hub/library/", bright_hub_handler, library},

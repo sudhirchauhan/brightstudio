@@ -57,3 +57,8 @@ The user requested direct Erlang implementation without legacy-history compariso
 Workspace live SHA `6d071ef51fb7225f75ca39302d373ed946f56e1e`, deploy `dep-db6dc1ss728c7383irm0`, passed the public Projects/Tasks/Planner/Account journey, five seeded tasks, preserved bootstrap credentials and `/healthz` + `/readyz` 200 on the free service. See [current milestone release evidence](workspace-planner-plan.md). UI alignment is now the next milestone.
 
 The current application release adds a verified public fictional-JPG gallery at https://brightstudio-m1-staging.onrender.com/studio/mockups/ . `STUDIO_UI_MOCKS_ENABLED=true` is enabled on staging; all normal account/source APIs remain private. This fixes delivery of previews when the chat file viewer displays “No image”; the new application design still awaits review/implementation.
+
+
+## Approved Quiet Studio UI implementation
+
+The user approved the new JPG concepts on 2026-10-12 and authorized applying them. The new warm-white/teal shell, compact rail/mobile Menu, flat source/task rows, shared forms, centered serif Reader, on-demand evidence drawer and one-question Study layout are implemented. Reader and Study support independent distraction-free modes and user-triggered browser fullscreen, with discoverable exits/Escape and an unsupported-browser fallback. Revision context, draft answers, saved progress and private authorization remain intact. The Overview uses real ready sources for reading/Study actions; it does not invent reading bookmarks. See [UI alignment screen/state matrix and checks](ui-alignment-plan.md). Local browser checks passed; hosted validation and final deployed design acceptance are separate gates.

@@ -1,6 +1,6 @@
 'use strict';
 const $ = selector => document.querySelector(selector);
-let csrf, sources = [], states = new Map(), key, requestData, loadVersion = 0, libraryEnabled = false;
+let csrf, sources = [], states = new Map(), key, requestData, loadVersion = 0, libraryEnabled = false, studyEnabled = false;
 let sourceId, revisions = [], selectedRevision, revisionVersion = 0, uploadSource, uploadKey, uploadFingerprint, createdSource;
 const pending = new Set(['queued', 'processing']);
 const labels = {queued:'Waiting to extract',processing:'Extracting',ready:'Ready to read',failed:'Needs attention'};
@@ -14,6 +14,10 @@ async function api(path, options = {}) {
 }
 function status(message, error = false) { $('#status').textContent = message; $('#status').classList.toggle('error', error); }
 function render() {
+  const overview=location.pathname==='/studio/hub/';
+  const latest=sources.find(source=>states.get(source.id)?.state==='ready');
+  $('#continue-reading').hidden=!overview||!latest;$('#overview-study').hidden=!overview||!latest||!studyEnabled;
+  if(latest){const revision=states.get(latest.id);$('#continue-title').textContent=latest.title;$('#continue-detail').textContent=`Revision ${revision.revision}`;$('#continue-link').href=`/studio/hub/sources/${latest.id}?revision=${revision.revision_id}`;$('#overview-study-title').textContent=latest.title;$('#overview-study-detail').textContent=`Revision ${revision.revision} · Recall and reflection`;$('#overview-study-link').href=`/studio/hub/study/?source=${latest.id}&revision=${revision.revision_id}`;}
   const query = $('#search').value.toLocaleLowerCase(), visible = sources.filter(source => source.title.toLocaleLowerCase().includes(query));
   $('#sources').replaceChildren(); $('#empty').hidden = visible.length > 0;
   $('#empty').textContent = sources.length ? 'No sources match your search.' : 'No sources yet. Add your first source to start your library.';
@@ -23,7 +27,8 @@ function render() {
     link.href = `/studio/hub/sources/${source.id}`; link.textContent = source.title;
     const revision = states.get(source.id);
     heading.append(link); detail.textContent = revision ? `${labels[revision.state]} · Revision ${revision.revision}` : `${source.kind} · Metadata saved`;
-    card.append(heading, detail); $('#sources').append(card);
+    const format=document.createElement('span');format.className='source-format';format.setAttribute('aria-hidden','true');format.textContent=source.kind.toUpperCase();
+    card.append(format, heading, detail); $('#sources').append(card);
   }
 }
 async function load(quiet = false) {
@@ -101,7 +106,8 @@ async function loadRevisions() {
     $('#revision').replaceChildren(...items.map(item => { const option=document.createElement('option'); option.value=item.id;option.textContent=`Revision ${item.revision} · ${item.filename}`;return option; }));
     const revision = items.find(item => item.id === selectedRevision);
     if (!revision) { $('#reading-text').replaceChildren(); $('#download').hidden = true; $('#retry').hidden = true; $('#reading-status').textContent = 'This revision is unavailable.'; return; }
-    $('#revision').value = selectedRevision;
+    $('#revision').value = selectedRevision;$('#reader-context-revision').textContent=`Revision ${revision.revision}`;
+    if(revision.state==='failed')$('#reader-tools').open=true;
     $('#download').hidden = false; $('#download').href = `/studio/api/hub/sources/${sourceId}/revisions/${selectedRevision}/original`;
     $('#retry').hidden = revision.state !== 'failed'; $('#reading-text').replaceChildren();
     document.dispatchEvent(new CustomEvent('bright-reader',{detail:{sourceId,revisionId:selectedRevision,text:null,state:revision.state}}));
@@ -129,7 +135,7 @@ $('#logout').addEventListener('click', async () => {
 (async () => {
   document.querySelectorAll('nav a').forEach(a => { if(a.pathname === location.pathname) a.setAttribute('aria-current','page'); });
   try {
-    const session = await api('/studio/api/session'); csrf = session.csrf; libraryEnabled = session.library_enabled; $('#account').textContent = session.display_name||session.email;
+    const session = await api('/studio/api/session'); csrf = session.csrf; libraryEnabled = session.library_enabled; studyEnabled=session.study_enabled; $('#account').textContent = session.display_name||session.email;
     $('#library-notice').textContent = libraryEnabled ? 'Private TXT, PDF and EPUB files, with readable text and immutable revisions.' : 'Metadata only. File reading is currently disabled.';
     const projects = await api('/studio/api/hub/projects');
     document.dispatchEvent(new CustomEvent('bright-session',{detail:{enabled:session.evidence_enabled,studyEnabled:session.study_enabled,workspaceEnabled:session.workspace_enabled,csrf,projects}}));
@@ -139,13 +145,13 @@ $('#logout').addEventListener('click', async () => {
     if (location.pathname.startsWith('/studio/hub/sources/')) {
       sourceId = location.pathname.split('/').pop();
       const source = await api(`/studio/api/hub/sources/${encodeURIComponent(sourceId)}`);
-      $('#heading').textContent = 'Reader'; $('#reader').hidden = false;
-      $('#source-title').textContent = source.title; $('#source-kind').textContent = source.kind;
+      $('#page-intro').hidden=true; $('#reader').hidden = false;
+      $('#source-title').textContent = source.title;$('#reader-context-title').textContent=source.title; $('#source-kind').textContent = source.kind;
       $('#project').value = source.project_id;sessionStorage.setItem('bright-project',source.project_id); $('#project').disabled = true;
       if(source.url) { $('#source-url').href = source.url; $('#source-url').hidden = false; }
       status('Source metadata loaded.'); if (libraryEnabled) await loadRevisions();
-    } else if(['/studio/hub/projects/','/studio/hub/tasks/','/studio/hub/planner/','/studio/hub/account/'].includes(location.pathname)) { $('#workspace-page').hidden=false; status('Your projects, tasks and account settings.'); } else if(location.pathname === '/studio/hub/study/') { $('#heading').textContent='Study'; $('#description').textContent='Practice a passage, save a reflection, and return to your progress.'; $('#study-page').hidden=false; status('Practice and resume saved lessons.'); } else if(location.pathname === '/studio/hub/evidence/') { $('#heading').textContent='Evidence'; $('#boards-page').hidden=false; status('Collect pinned quotes and notes on your project boards.'); }
-    else { $('#library').hidden = false; await load(); }
+    } else if(['/studio/hub/projects/','/studio/hub/tasks/','/studio/hub/planner/','/studio/hub/account/'].includes(location.pathname)) { $('#workspace-page').hidden=false; status('Your projects, tasks and account settings.'); } else if(location.pathname === '/studio/hub/study/') { $('#heading').textContent='Study'; $('#description').textContent='Practice a passage, save a reflection, and return to your progress.'; $('#library-notice').hidden=true;$('#study-page').hidden=false; status('Practice and resume saved lessons.'); } else if(location.pathname === '/studio/hub/evidence/') { $('#heading').textContent='Evidence'; $('#library-notice').hidden=true;$('#boards-page').hidden=false; status('Collect pinned quotes and notes on your project boards.'); }
+    else { const overview=location.pathname==='/studio/hub/';$('#heading').textContent=overview?'A little space to learn':'Library';$('#description').textContent=overview?'Return to a source, practice an idea, and make it your own.':'Keep the sources that matter, and return when you are ready.';$('#sources-heading').textContent=overview?'Recent sources':'Your sources';$('#library-notice').hidden=libraryEnabled;$('#library').hidden = false; await load(); }
     setInterval(() => {
       if (document.hidden || $('#dialog').open) return;
       if (sourceId && libraryEnabled && revisions.some(r => r.id === selectedRevision && pending.has(r.state))) loadRevisions();
