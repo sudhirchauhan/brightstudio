@@ -7,7 +7,18 @@ async function login(request, who = email, secret = password) {
   expect(response.status()).toBe(200); return (await response.json()).csrf;
 }
 test('anonymous users and unauthenticated assets are denied',async({request})=>{
-  for(const path of ['/studio/hub/','/studio/hub/library/','/studio/hub/hub.js','/studio/api/hub/projects','/studio/api/hub/sources']) expect((await request.get(path)).status()).toBe(401);
+  const paths=['/studio/hub/','/studio/hub/library/','/studio/hub/evidence/','/studio/hub/sources/00000000-0000-4000-8000-000000000000?revision=00000000-0000-4000-8000-000000000001'];
+  for(const path of paths){const response=await request.get(path,{maxRedirects:0});expect(response.status()).toBe(302);expect(response.headers().location).toBe('/studio/login/?next='+encodeURIComponent(path));expect(response.headers()['cache-control']).toBe('no-store');}
+  for(const path of ['/studio/hub/hub.js','/studio/hub/evidence.js','/studio/api/hub/projects','/studio/api/hub/sources']) expect((await request.get(path)).status()).toBe(401);
+});
+test('direct Library link returns to Library after sign-in',async({page})=>{
+  await page.goto('/studio/hub/library/');await expect(page).toHaveURL(/\/studio\/login\/\?next=/);
+  await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password',{exact:true}).fill(password);await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await expect(page).toHaveURL(/\/studio\/hub\/library\/$/);await expect(page.locator('#account')).toHaveText(email);
+  for(const next of ['https://example.com/','//example.com/','/studio/hub/hub.js']){
+    await page.goto('/studio/login/?next='+encodeURIComponent(next));
+    expect(await page.evaluate(()=>returnPath())).toBe('/studio/hub/');
+  }
 });
 test('owner isolation, CSRF, validation and idempotent metadata writes',async({request,playwright})=>{
   const csrf = await login(request), projects = await (await request.get('/studio/api/hub/projects')).json();

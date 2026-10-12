@@ -175,6 +175,16 @@ cookie_options() ->
       secure=>not (Local andalso os:getenv("BRIGHT_INSECURE_LOCAL_COOKIE") =:= "true")}.
 result({ok,Value},Req,Route) -> reply(200,Value,Req,Route);
 result(Error,Req,Route) -> error_reply(Error,Req,Route).
+error_reply({error,unauthenticated},Req,Route) ->
+    case cowboy_req:method(Req)=:= <<"GET">> andalso lists:member(Route,[hub,library,reader,evidence_page]) of
+        true->
+            Path=cowboy_req:path(Req),
+            Next=case cowboy_req:qs(Req) of <<>>->Path;Qs-><<Path/binary,"?",Qs/binary>> end,
+            Location= <<"/studio/login/?next=",(uri_string:quote(Next))/binary>>,
+            Headers=(response_headers(<<"text/html; charset=utf-8">>))#{<<"location">>=>Location},
+            {ok,cowboy_req:reply(302,Headers,<<>>,Req),Route};
+        false->reply(401,#{error=>unauthenticated},Req,Route)
+    end;
 error_reply({error,Reason},Req,Route) ->
     {Code,Public} = case Reason of
         unauthenticated -> {401,unauthenticated}; forbidden -> {403,forbidden};
@@ -186,7 +196,8 @@ error_reply({error,Reason},Req,Route) ->
 reply(Code,Value,Req,Route) -> raw(Code,<<"application/json; charset=utf-8">>,jsx:encode(Value),Req,Route).
 html(Bytes,Req,Route) -> raw(200,<<"text/html; charset=utf-8">>,Bytes,Req,Route).
 raw(Code,Type,Bytes,Req,Route) ->
-    Headers = #{<<"content-type">>=>Type,<<"cache-control">>=><<"no-store">>,
+    {ok,cowboy_req:reply(Code,response_headers(Type),Bytes,Req),Route}.
+response_headers(Type)->
+    #{<<"content-type">>=>Type,<<"cache-control">>=><<"no-store">>,
         <<"x-content-type-options">>=><<"nosniff">>,<<"referrer-policy">>=><<"same-origin">>,
-        <<"content-security-policy">>=><<"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'">>},
-    {ok,cowboy_req:reply(Code,Headers,Bytes,Req),Route}.
+        <<"content-security-policy">>=><<"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'">>}.
