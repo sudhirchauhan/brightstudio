@@ -60,3 +60,22 @@ Application `5f27e51aafb0d71d84f9086d2b34a45533b75878`, deploy `dep-db6hgvff3r2c
 ## Milestone 5: Focus — 2026-10-12
 
 Application `f48e63101096b1e635d3d1a7c89d933908c11086`, deploy `dep-db6ire8473hc73dhti4g`, existing free `brightstudio-m1-staging`, branch `milestone-3`, auto-deploy off. Actual Chromium desktop (1280×800) and mobile (390×844) checks passed private Focus → sign-in → Focus, task/pinned-source entry, one-minute start, pause/reload with unchanged saved elapsed time, resume, native fullscreen/Escape, saved checkpoint, server early-completion rejection, real one-minute elapsed completion with reflection, reload/review, responsive layout, no page errors and sign-out/private-script denial. No test clock override was used on Render. Screenshots captured active/completed desktop/mobile states. A refresh/completion race discovered during this validation was fixed and checked with delayed reads on both viewports before rerunning hosted acceptance. `/healthz` and `/readyz` returned 200 and service plan remained free. Existing credentials were preserved. No paid resource, main merge or original-service change occurred. Free hosted SQLite remains disposable on instance replacement. See [Focus plan](milestone-5-plan.md) and [next Documents plan](milestone-6-plan.md).
+
+## Documents, Assistant, Capture and Offline — 2026-10-13
+
+Application `9696d739553422875aefe6979eab7fdc997a6b22`, Render deployment `dep-db700ed9fdbs73eipt2g`, existing free `brightstudio-m1-staging`, branch `milestone-3`, auto-deploy off. Both health endpoints returned 200 over verified HTTPS. `tests/hosted-learning-checks.js` passed all ten desktop/mobile journey groups on actual staging. It used only the existing bootstrap credential in process memory, leaving password/profile unchanged. Screenshots and logs are retained under `erlang/_build/setup-logs/hosted-learning*`.
+
+- desktop cited document/save/reload/export/fullscreen
+- desktop actual generated answer and pinned citation
+- desktop OCR/private original/reader
+- desktop WAV transcription
+- desktop offline read/draft/reconnect/sync/immutable export/sign-out privacy
+- mobile cited document/save/reload/export/fullscreen
+- mobile actual generated answer and pinned citation
+- mobile OCR/private original/reader
+- mobile browser-recorded WebM transcription
+- mobile offline read/draft/reconnect/sync/immutable export/sign-out privacy
+
+Real local models ran on the service; no provider stub or fake transcript was used. The browser recording used the public JFK fixture through Chromium’s fake microphone device, exercising MediaRecorder WebM and actual transcription without recording a person. Offline checks disconnected/reloaded the browser, retained a local draft, reconnected/synced, preserved the earlier saved export and removed private copies on sign-out. No uncaught page JavaScript errors occurred. Synthetic learning sources and demo documents remain for testing.
+
+The deployment retains private sessions/CSRF/ownership, default-off feature gates and explicit device consent. Free SQLite remains ephemeral. This evidence does not assert durable production deployment, complete original-roadmap scope, a main merge or production cutover.

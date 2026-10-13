@@ -1,4 +1,5 @@
 # Bright Studio implementation status — 2026-10-13
+Current release: Documents, Assistant, Audio/capture and Offline are live and verified on the existing free service. Application `9696d739553422875aefe6979eab7fdc997a6b22`, deployment `dep-db700ed9fdbs73eipt2g`. All 70 local browser cases, 50 SQLite and 47 PostgreSQL tests passed; actual hosted desktop/mobile journeys passed. See [remaining milestone status](remaining-milestones-plan.md) and [operations](learning-tools-runbook.md). Production durability and traffic/data cutover remain separate.
 
 The original roadmap is [Full UI-first Erlang/OTP Delivery Plan](bright-studio-full-ui-first-erlang-plan.md). It remains the source for the complete rewrite; the milestones delivered so far cover a smaller Learning Hub scope. The original roadmap file has not been rewritten to imply completion.
 
@@ -12,10 +13,10 @@ The original roadmap is [Full UI-first Erlang/OTP Delivery Plan](bright-studio-f
 | 3 | Evidence and notes | Exact revision-pinned quotes, UTF-8 anchors, annotations, versioned edits/history and project boards implemented; demo verified | Product acceptance and production release gates |
 | 4 | Study workflow | Revision-pinned recall lessons, attempts, feedback, reflection gate and resume implemented; local and hosted desktop/mobile checks passed | User design acceptance and production durability |
 | 5 | Focus | Implemented: owned task/source sessions, pause/resume, checkpoints/evidence, server-time completion and reflections; local SQL/browser/restart and actual hosted desktop/mobile checks passed | User product review and production storage durability |
-| 6 | Documents | Implemented; local SQL/browser/restart checks passed | Hosted release verification in progress |
-| 7 | AI assistant | Evidence guides and real local generation, citations and daily budgets implemented/tested | Hosted release verification in progress; generated claims require review |
-| 8 | Audio and capture | Recording, English transcription/OCR and private bounded jobs implemented/tested | Hosted release verification in progress |
-| 9 | Offline and sync | Consented packages, local drafts, exact sync/conflicts and cleanup implemented/tested | Hosted release verification in progress |
+| 6 | Documents | Implemented; local SQL/browser/restart checks passed | Live; user product review remains |
+| 7 | AI assistant | Evidence guides and real local generation, citations and daily budgets implemented/tested | Live; generated claims require review |
+| 8 | Audio and capture | Recording, English transcription/OCR and private bounded jobs implemented/tested | Live; user product review remains |
+| 9 | Offline and sync | Consented packages, local drafts, exact sync/conflicts and cleanup implemented/tested | Live; user product review remains |
 | 10 | Cutover and rollout | Backup/restore drill, bounded load, free-resource processing and rollback runbook completed | Durable production target and actual traffic/data cutover remain separate; history comparison was waived |
 
 Milestone 1 delivered the Hub/authentication/source-metadata walking skeleton, not all of original slice 1. Milestones 2 and 3 delivered Library/Reader and Evidence/Notes. A SQLite development demo is not full legacy rewrite completion or a durable production deployment.
@@ -24,8 +25,8 @@ Milestone 1 delivered the Hub/authentication/source-metadata walking skeleton, n
 
 - SQLite development is implemented alongside the PostgreSQL backend. Application/domain logic remains Erlang/OTP. Versioned SQLite migrations cover versions 1–37; PostgreSQL migrations and TLS checks remain intact.
 - Default cloud development uses `scripts/cloud-sqlite-setup.sh` and `scripts/cloud-sqlite-start.sh`, with the `bright-sqlite-dev` container, a retained workspace SQLite file and supervised extraction in the web VM. Existing PostgreSQL files/volumes are preserved.
-- Render service: `brightstudio-m1-staging` (`srv-db5qa5bl550s73b1qu40`), Frankfurt, **free**, `milestone-3`, auto-deploy off. Live application commit: `f48e63101096b1e635d3d1a7c89d933908c11086`; deploy `dep-db6ire8473hc73dhti4g`. `/readyz` is the deployment health check.
-- URL: https://brightstudio-m1-staging.onrender.com/studio/login/ . Hub, Library, Evidence, Study, Workspace, Focus and web extraction are enabled. A private getting-started source, note and board were added through the real hosted APIs.
+- Render service: `brightstudio-m1-staging` (`srv-db5qa5bl550s73b1qu40`), Frankfurt, **free**, `milestone-3`, auto-deploy off. Live application commit: `9696d739553422875aefe6979eab7fdc997a6b22`; deploy `dep-db700ed9fdbs73eipt2g`. `/readyz` is the deployment health check.
+- URL: https://brightstudio-m1-staging.onrender.com/studio/login/ . Hub, Library, Evidence, Study, Workspace, Focus, Documents, Assistant, Audio/capture, Offline and web extraction are enabled. A private getting-started source, note and board were added through the real hosted APIs.
 - Development login email: `developer@brightstudio.test`. The securely generated password stays in that service's Render Environment setting `BRIGHT_BOOTSTRAP_PASSWORD`; it is not recorded in source or test logs. Normal session, cookie, CSRF and ownership checks remain active.
 - Hosted SQLite is disposable: free Render instance replacement/redeploy/restart can erase saved data. The UI displays a notice. Local data survives Erlang process restarts while the workspace files remain. No production durability is asserted.
 - No paid database, worker or disk was provisioned. No main merge, original development-service change, legacy import or production cutover occurred.
@@ -75,4 +76,4 @@ Focus live application `f48e63101096b1e635d3d1a7c89d933908c11086`, deployment `d
 
 ## Remaining feature implementation — 2026-10-13
 
-Documents, Assistant, Audio/capture and Offline are implemented. All 70 desktop/mobile browser cases, 50 SQLite and 47 PostgreSQL tests passed. Real generation, OCR and transcription passed under an isolated 512 MiB / 0.1 CPU limit. Queued-job recovery, private original byte fidelity, pinned offline snapshots, exact sync receipts, disabled/private routes and migration-readiness checks passed across full release restarts. The final Docker image built successfully. Deployment and live acceptance are tracked in [remaining milestones](remaining-milestones-plan.md); [operating procedures](learning-tools-runbook.md) cover limits, models, backup/recovery and rollback.
+Documents, Assistant, Audio/capture and Offline are implemented. All 70 desktop/mobile browser cases, 50 SQLite and 47 PostgreSQL tests passed. Real generation, OCR and transcription passed under an isolated 512 MiB / 0.1 CPU limit. Queued-job recovery, private original byte fidelity, pinned offline snapshots, exact sync receipts, disabled/private routes and migration-readiness checks passed across full release restarts. The final Docker image built successfully. Deployment and live acceptance passed; results are tracked in [remaining milestones](remaining-milestones-plan.md); [operating procedures](learning-tools-runbook.md) cover limits, models, backup/recovery and rollback.

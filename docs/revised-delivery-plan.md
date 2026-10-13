@@ -1,4 +1,4 @@
-# Revised Bright Studio delivery plan — 2026-10-12
+# Revised Bright Studio delivery plan — 2026-10-13
 
 This plan follows completion of SQLite development support. The [original roadmap](bright-studio-full-ui-first-erlang-plan.md) remains unchanged, and [implementation status](implementation-status.md) records what is actually delivered.
 
@@ -19,10 +19,10 @@ The first UI features are available now: sign in, select the development project
 | 5 | UI alignment milestone | Existing screens adopt the approved Quiet Studio concepts across desktop/mobile | Approved new JPG concepts, screen/state comparison, visual checks and final deployed UI acceptance |
 | 6 | Milestone 5: Focus | Start/resume/complete a focus session linked to learning work | Durable checkpoints, valid state transitions, duplicate-completion prevention and restart tests |
 | 7 | Milestone 6: Documents | Draft cited blocks, resolve edit conflicts and export | Revision/provenance checks, compare-and-swap edits and export acceptance |
-| 8 | AI, audio/capture and offline/sync | Grounded assistance, private capture and reconnectable work | Provider/cost configuration within the free-only constraint, bounded jobs, replay/conflict and authorization checks |
-| 9 | Full rewrite release and cutover | Existing Bright Day/Studio journeys run on Erlang | Durable storage, complete legacy parity, migration/recovery/capacity evidence and explicit one-writer cutover decision |
+| 8 | AI, audio/capture and offline/sync | Grounded assistance, private capture and reconnectable work | Configured models, budgets and free hosting, bounded jobs, replay/conflict and authorization checks |
+| 9 | Full rewrite release and cutover | Existing Bright Day/Studio journeys run on Erlang | Durable storage, agreed production scope, migration/recovery/capacity evidence and explicit one-writer cutover decision |
 
-Later features remain deferred until the earlier usable journey is demonstrated. The free demo does not satisfy production storage/capacity requirements. Timing depends on acceptance findings and concrete prerequisites; use verified feature releases rather than calendar promises. No paid provider, service or disk is authorized by this plan.
+The user subsequently authorized implementing all remaining learning milestones. Documents, Assistant, Audio/capture and Offline are now implemented and locally verified; the combined hosted release is tracked in [remaining milestones](remaining-milestones-plan.md). The free demo does not satisfy production storage/capacity requirements. Timing depends on acceptance findings and concrete prerequisites; use verified feature releases rather than calendar promises. No paid provider, service or disk is authorized by this plan.
 
 ## Milestone 4 implementation plan
 
@@ -81,3 +81,9 @@ The approved Quiet Studio design is implemented and live at https://brightstudio
 The user requested continuing after the deployed Quiet Studio release. Focus now implements task/source-linked sessions, a quiet timer, pause/resume, saved checkpoints with optional evidence, reflections, completion/review and independent distraction-free/fullscreen controls. Server time, expected versions, one open session per owner and replay receipts guard progress. Local SQL, full desktop/mobile regressions, actual-release restart/gate checks and real hosted desktop/mobile acceptance passed. Detailed contracts and checks: [Milestone 5 Focus plan](milestone-5-plan.md). Documents is the next feature slice.
 
 Focus is live at https://brightstudio-m1-staging.onrender.com/studio/hub/focus/ , application `f48e63101096b1e635d3d1a7c89d933908c11086`, deployment `dep-db6ire8473hc73dhti4g`, on the existing free service. Real one-minute server-time completion was verified on desktop/mobile, including saved checkpoints and reflection after reload. The full original roadmap remains incomplete. Next: [Milestone 6 — Documents](milestone-6-plan.md), with owned cited blocks, versioned saves and private Markdown export.
+
+## Completed learning milestones and next production plan — 2026-10-13
+
+Milestones 6–9 are deployed and passed local and actual hosted desktop/mobile acceptance. Milestone 10’s demo operations work is complete: backup/restore, bounded load/free-resource checks, restart recovery and a rollback runbook. See [release evidence](remaining-milestones-plan.md).
+
+The next production work requires a durable hosting/storage target compatible with the user’s constraints, an agreed production scope (including any account recovery/membership/import requirements), a real data migration/recovery rehearsal, and an explicitly scheduled traffic switch with one writer. No paid hosting, data migration, main merge or production cutover was performed. Legacy-history comparison is waived and is not a prerequisite to continued Erlang development.
