@@ -45,7 +45,7 @@ async function load(quiet = false) {
   } catch(error) { if (version === loadVersion) { $('#empty').hidden = true; status(error.message,true); $('#add').disabled = true; } }
 }
 $('#search').addEventListener('input', render);
-$('#project').addEventListener('change', () => {sessionStorage.setItem('bright-project',$('#project').value);if(!['/studio/hub/evidence/','/studio/hub/study/','/studio/hub/focus/','/studio/hub/projects/','/studio/hub/tasks/','/studio/hub/planner/','/studio/hub/account/'].includes(location.pathname)) load();});
+$('#project').addEventListener('change', () => {sessionStorage.setItem('bright-project',$('#project').value);if(!['/studio/hub/evidence/','/studio/hub/study/','/studio/hub/focus/','/studio/hub/documents/','/studio/hub/assistant/','/studio/hub/audio/','/studio/hub/offline/','/studio/hub/projects/','/studio/hub/tasks/','/studio/hub/planner/','/studio/hub/account/'].includes(location.pathname)) load();});
 function dialog(existingSource) {
   $('#source-form').reset(); $('#form-status').textContent = ''; key = crypto.randomUUID(); uploadKey = crypto.randomUUID();
   requestData = uploadFingerprint = createdSource = undefined; uploadSource = existingSource;
@@ -128,8 +128,14 @@ $('#retry').addEventListener('click', async () => {
   catch(error) { $('#reading-status').textContent = error.message; }
   finally { $('#retry').disabled = false; }
 });
+window.brightClearOffline=async()=>{
+ await new Promise((resolve,reject)=>{const r=indexedDB.deleteDatabase('bright-offline'),timeout=setTimeout(()=>reject(Error('Close other Bright Studio tabs to remove private copies.')),5000);r.onsuccess=()=>{clearTimeout(timeout);resolve();};r.onerror=()=>{clearTimeout(timeout);reject(Error('Could not remove private device copies.'));};r.onblocked=()=>{};});
+ for(const name of await caches.keys())if(name.startsWith('bright-offline-shell-'))await caches.delete(name);
+ for(const r of await navigator.serviceWorker.getRegistrations())if(r.scope===location.origin+'/studio/hub/')await r.unregister();
+ localStorage.removeItem('bright-offline-owner');
+};
 $('#logout').addEventListener('click', async () => {
-  try { await api('/studio/api/session/logout',{method:'POST',headers:{'X-CSRF-Token':csrf}}); location.assign('/studio/login/'); }
+  try {const [remote,local]=await Promise.allSettled([api('/studio/api/session/logout',{method:'POST',headers:{'X-CSRF-Token':csrf}}),window.indexedDB&&'serviceWorker' in navigator?window.brightClearOffline():Promise.resolve()]);if(remote.status==='rejected')throw remote.reason;location.assign('/studio/login/'+(local.status==='rejected'?'?local_copies=1':''));}
   catch(error) { status(error.message,true); }
 });
 (async () => {
@@ -137,10 +143,10 @@ $('#logout').addEventListener('click', async () => {
   if(document.readyState!=='complete')await new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true}));
   document.querySelectorAll('nav a').forEach(a => { if(a.pathname === location.pathname) a.setAttribute('aria-current','page'); });
   try {
-    const session = await api('/studio/api/session'); csrf = session.csrf; libraryEnabled = session.library_enabled; studyEnabled=session.study_enabled; $('#account').textContent = session.display_name||session.email;
+    const session = await api('/studio/api/session');const previousOwner=localStorage.getItem('bright-offline-owner');if(previousOwner&&previousOwner!==session.user_id)await window.brightClearOffline();csrf = session.csrf; libraryEnabled = session.library_enabled; studyEnabled=session.study_enabled;if(session.audio_enabled)failures.no_text='No readable text was found. For a scanned PDF, try an image of the page in Audio & capture.'; $('#account').textContent = session.display_name||session.email;
     $('#library-notice').textContent = libraryEnabled ? 'Private TXT, PDF and EPUB files, with readable text and immutable revisions.' : 'Metadata only. File reading is currently disabled.';
     const projects = await api('/studio/api/hub/projects');
-    document.dispatchEvent(new CustomEvent('bright-session',{detail:{enabled:session.evidence_enabled,studyEnabled:session.study_enabled,workspaceEnabled:session.workspace_enabled,focusEnabled:session.focus_enabled,csrf,projects}}));
+    document.dispatchEvent(new CustomEvent('bright-session',{detail:{enabled:session.evidence_enabled,studyEnabled:session.study_enabled,workspaceEnabled:session.workspace_enabled,focusEnabled:session.focus_enabled,documentsEnabled:session.documents_enabled,assistantEnabled:session.assistant_enabled,audioEnabled:session.audio_enabled,offlineEnabled:session.offline_enabled,userId:session.user_id,csrf,projects}}));
     for(const project of projects) { const option = document.createElement('option'); option.value = project.id; option.textContent = project.title; $('#project').append(option); }
     const preferred=new URLSearchParams(location.search).get('project')||sessionStorage.getItem('bright-project');if(projects.some(p=>p.id===preferred))$('#project').value=preferred;
     if (!projects.length) { status('No projects available. Ask your workspace administrator to provision a project.'); return; }
@@ -152,7 +158,7 @@ $('#logout').addEventListener('click', async () => {
       $('#project').value = source.project_id;sessionStorage.setItem('bright-project',source.project_id); $('#project').disabled = true;
       if(source.url) { $('#source-url').href = source.url; $('#source-url').hidden = false; }
       status('Source metadata loaded.'); if (libraryEnabled) await loadRevisions();
-    } else if(['/studio/hub/projects/','/studio/hub/tasks/','/studio/hub/planner/','/studio/hub/account/'].includes(location.pathname)) { $('#workspace-page').hidden=false; status('Your projects, tasks and account settings.'); } else if(location.pathname === '/studio/hub/focus/') {$('#heading').textContent='Focus';$('#description').textContent='Give one task or source your attention. Save checkpoints and return to your session.';$('#library-notice').hidden=true;$('#focus-page').hidden=false;status('');} else if(location.pathname === '/studio/hub/study/') { $('#heading').textContent='Study'; $('#description').textContent='Practice a passage, save a reflection, and return to your progress.'; $('#library-notice').hidden=true;$('#study-page').hidden=false; status('Practice and resume saved lessons.'); } else if(location.pathname === '/studio/hub/evidence/') { $('#heading').textContent='Evidence'; $('#library-notice').hidden=true;$('#boards-page').hidden=false; status('Collect pinned quotes and notes on your project boards.'); }
+    } else if(['/studio/hub/projects/','/studio/hub/tasks/','/studio/hub/planner/','/studio/hub/account/'].includes(location.pathname)) { $('#workspace-page').hidden=false; status('Your projects, tasks and account settings.'); } else if(location.pathname === '/studio/hub/offline/') {$('#heading').textContent='Offline';$('#description').textContent='Take a small part of your workspace with you.';$('#library-notice').hidden=true;$('#offline-page').hidden=false;status('');} else if(location.pathname === '/studio/hub/audio/') {$('#heading').textContent='Audio & capture';$('#description').textContent='Keep a spoken idea or a page, then return to its text.';$('#library-notice').hidden=true;$('#media-page').hidden=false;status('');} else if(location.pathname === '/studio/hub/assistant/') {$('#heading').textContent='Assistant';$('#description').textContent='Think with your evidence. Keep every answer close to its source.';$('#library-notice').hidden=true;$('#assistant-page').hidden=false;status('');} else if(location.pathname === '/studio/hub/documents/') {$('#heading').textContent='Documents';$('#description').textContent='Build a thought from your sources. Keep its evidence close.';$('#library-notice').hidden=true;$('#documents-page').hidden=false;status('');} else if(location.pathname === '/studio/hub/focus/') {$('#heading').textContent='Focus';$('#description').textContent='Give one task or source your attention. Save checkpoints and return to your session.';$('#library-notice').hidden=true;$('#focus-page').hidden=false;status('');} else if(location.pathname === '/studio/hub/study/') { $('#heading').textContent='Study'; $('#description').textContent='Practice a passage, save a reflection, and return to your progress.'; $('#library-notice').hidden=true;$('#study-page').hidden=false; status('Practice and resume saved lessons.'); } else if(location.pathname === '/studio/hub/evidence/') { $('#heading').textContent='Evidence'; $('#library-notice').hidden=true;$('#boards-page').hidden=false; status('Collect pinned quotes and notes on your project boards.'); }
     else { const overview=location.pathname==='/studio/hub/';$('#heading').textContent=overview?'A little space to learn':'Library';$('#description').textContent=overview?'Return to a source, practice an idea, and make it your own.':'Keep the sources that matter, and return when you are ready.';$('#sources-heading').textContent=overview?'Recent sources':'Your sources';$('#library-notice').hidden=libraryEnabled;$('#library').hidden = false; await load(); }
     setInterval(() => {
       if (document.hidden || $('#dialog').open) return;

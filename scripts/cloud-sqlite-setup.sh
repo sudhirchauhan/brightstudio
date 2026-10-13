@@ -11,7 +11,7 @@ if ! docker container inspect bright-sqlite-dev >/dev/null 2>&1; then
     -p 127.0.0.1:10000:10000 -v "$project_root/erlang:/app" \
     -e DATABASE_URL=sqlite:/app/_build/bright-development.sqlite \
     -e STUDIO_HUB_ENABLED=true -e STUDIO_LIBRARY_ENABLED=true -e STUDIO_EVIDENCE_ENABLED=true \
-    -e STUDIO_WORKSPACE_ENABLED=true -e STUDIO_STUDY_ENABLED=true -e STUDIO_FOCUS_ENABLED=true -e STUDIO_WEB_EXTRACTION_ENABLED=true -e BRIGHT_ORIGIN=http://127.0.0.1:10000 \
+    -e STUDIO_WORKSPACE_ENABLED=true -e STUDIO_STUDY_ENABLED=true -e STUDIO_FOCUS_ENABLED=true -e STUDIO_DOCUMENTS_ENABLED=true -e STUDIO_AI_ENABLED=true -e STUDIO_AUDIO_ENABLED=true -e STUDIO_OFFLINE_ENABLED=true -e STUDIO_WEB_EXTRACTION_ENABLED=true -e BRIGHT_ORIGIN=http://127.0.0.1:10000 \
     -e BRIGHT_INSECURE_LOCAL_COOKIE=true \
     erlang:27@sha256:3bcaa1d1d910da84b59b3cfd192adc2228fcd78937adefda029f8b3a1477b3f5 sleep infinity >/dev/null
 else

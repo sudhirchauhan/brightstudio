@@ -18,8 +18,13 @@ close(C)->case sqlite(C) of true->gen_server:stop(C);false->epgsql:close(C) end.
 with_transaction(C,F)->case sqlite(C) of
     false->epgsql:with_transaction(C,F);
     true->try
-        {ok,[],[]}=squery(C,"BEGIN IMMEDIATE"),
+        {ok,[],[]}=begin_sqlite(C,erlang:monotonic_time(millisecond)+5000),
         R=F(C),
         {ok,[],[]}=squery(C,"COMMIT"),R
     catch _:Reason -> squery(C,"ROLLBACK"),{rollback,Reason} end
 end.
+
+%% Yield between lock attempts; a long native busy wait can starve the writer
+%% whose Erlang transaction needs a scheduler to commit. Only BEGIN is retried.
+begin_sqlite(C,Deadline)->case squery(C,"BEGIN IMMEDIATE") of
+ {error,sqlite_busy}=E->case erlang:monotonic_time(millisecond)<Deadline of true->timer:sleep(10),begin_sqlite(C,Deadline);false->E end;R->R end.

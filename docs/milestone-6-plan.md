@@ -1,6 +1,6 @@
-# Next milestone — Documents
+# Milestone 6 — Documents
 
-Planned after Focus. No Documents implementation or release is claimed by this plan. Keep the approved Quiet Studio design, Erlang backend, SQLite development/PostgreSQL compatibility and free-only staging constraints.
+Implemented after Focus; local verification is complete and hosted release verification is tracked in [remaining milestones](remaining-milestones-plan.md). Keep the approved Quiet Studio design, Erlang backend, SQLite development/PostgreSQL compatibility and free-only staging constraints.
 
 ## First visible feature
 
@@ -15,4 +15,4 @@ Create an owned project document, add/edit/reorder plain-text and quoted-evidenc
 5. Gate navigation, page, assets, APIs and exports with `STUDIO_DOCUMENTS_ENABLED`, default off. Verify ownership, stale/concurrent edits, replay, provenance, source-revision changes, safe rendering, exact export bytes, restart persistence and disabled gates on both databases and desktop/mobile.
 6. Deploy a verified SHA to the existing free service and test the real create → cite → save → reopen → export journey. Record hosted evidence and obtain user product review; retain the free SQLite durability limitation.
 
-The original roadmap remains unchanged. AI assistance, audio/OCR, offline/sync and production cutover remain later slices with their own gates.
+The original roadmap remains unchanged. AI assistance, audio/OCR and offline/sync are implemented in the combined release. Production cutover remains separate. See [feature contracts and operations](learning-tools-runbook.md).

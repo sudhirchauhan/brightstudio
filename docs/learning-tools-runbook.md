@@ -1,0 +1,36 @@
+# Documents, Assistant, Capture and Offline
+
+Implemented on `milestone-3`, 2026-10-13. The release record is in [remaining milestones](remaining-milestones-plan.md). These features extend the approved Quiet Studio interface and use Erlang/OTP domain logic on SQLite or PostgreSQL. The original roadmap remains the broader product specification.
+
+## User workflows and bounds
+
+- **Documents (6):** create project documents, edit/reorder text and pinned evidence blocks, compare conflicting versions, save immutable revisions, and export a private saved-version Markdown file. Writing mode and browser fullscreen are independent. Limits: 100 documents and 1,000 total versions per owner, 100 blocks per document, 2,000 characters per text block. Expected versions and exact payload-bound receipts prevent duplicate or stale writes.
+- **Assistant (7):** select one to three owned evidence passages and save an explanation, comparison or feedback question. Evidence guides show exact passages; generated answers use an actual configured model and must cite authorized evidence IDs. Comparisons require at least two passages. Structural citation validation does not prove a generated claim is true: the interface asks the reader to review claims. The default small English model produces a short paragraph, not a long-form research answer. Each generated request reserves its input allowance plus 4,096 against a 20,000 daily owner budget before acceptance; failed jobs do not silently resubmit.
+- **Audio and capture (8):** explicitly upload PNG/JPEG/WAV/WebM or consent to a microphone recording, preview/discard/save it, then open the derived text as a private immutable source revision. English OCR uses Tesseract; transcription uses Whisper tiny.en. Uploads are at most 4 MiB; browser recordings stop at 60 seconds and audio processing rejects duration above two minutes. Originals remain private. Limits: 64 MiB and 256 jobs per owner, at most three explicit processing attempts.
+- **Offline (9):** explicitly consent to a local private copy containing up to five pinned source revisions and five saved documents. Read offline, save local drafts, reconnect and explicitly sync. A stale version keeps the local draft for review; an uncertain response reuses its receipt. Packages are at most 1 MiB and expire after seven days; at most ten active packages per owner. Revocation applies to disconnected devices on reconnection. Sign-out/password changes clear local private copies; no credentials are cached. The public service-worker shell contains no account data.
+
+## Configuration and models
+
+`STUDIO_DOCUMENTS_ENABLED`, `STUDIO_AI_ENABLED`, `STUDIO_AUDIO_ENABLED` and `STUDIO_OFFLINE_ENABLED` default off. Enable them explicitly alongside Hub and the relevant Library/Evidence workflows. SQLite and PostgreSQL additive migrations now span 1–37; `/readyz` checks the full required schema for enabled features. The web VM supports all background work on the existing free service using `STUDIO_WEB_EXTRACTION_ENABLED=true`.
+
+The Docker image and cloud native-model installer use `erlang/scripts/native-models.lock.json`: exact llama.cpp and whisper.cpp commits and SHA-256 verified SmolLM2-135M-Instruct Q4_K_M / Whisper tiny.en weights. TLS and artifact verification remain enabled. No model-provider secret or paid service is required by this configuration. Optional Ollama generation uses the configured trusted endpoint with verified HTTPS (HTTP only for loopback); it is not required for the demo.
+
+The four native settings are `BRIGHT_AI_EXECUTABLE`, `BRIGHT_AI_MODEL_PATH`, `BRIGHT_WHISPER_EXECUTABLE` and `BRIGHT_WHISPER_MODEL_PATH`. Docker defaults point to `/opt/bright-native`; cloud development points to `/app/_build/native-runtime`. Native jobs serialize within the VM, have bounded time/output, and strip secret-bearing environment variables before launching subprocesses. Generation has a 60-second wall timeout, transcription 110 seconds, and job ownership leases last 180 seconds. An interrupted attempt becomes visibly failed after lease expiry rather than repeating a potentially charged provider call.
+
+## Repeatable development and verification
+
+From `/workspace/brightstudio` run `bash scripts/cloud-sqlite-setup.sh`, then `bash scripts/cloud-native-models-setup.sh`, then `bash scripts/cloud-sqlite-start.sh`. Preserve `erlang/_build/bright-development.sqlite` and its WAL/SHM files. Models and dependencies persist in `_build`; live processes must be restarted after environment restoration.
+
+For destructive acceptance checks, use `python3 scripts/local-acceptance-release.py` to create a new disposable acceptance database. Run `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium BRIGHT_TEST_DOCKER_CONTAINER=bright-sqlite-dev npm run test:e2e`. The native model settings are required to exercise generation/transcription instead of optional skips. `tests/remaining-release-checks.js` requires `BRIGHT_TEST_DOCKER_CONTAINER=bright-sqlite-dev` and an explicit `BRIGHT_TEST_DATABASE_URL` from `_build/latest-acceptance-database.txt`. It proves queue recovery, exact receipts, retained private originals, feature gates and migration readiness across process restarts. Never run its schema fixture on real user data.
+
+After acceptance, stop the owned release and run `scripts/cloud-sqlite-start.sh` to restore the retained development database. CI installs the same pinned native tools and models and runs SQLite/PostgreSQL test jobs. Local execution is recorded separately from unobserved GitHub-hosted CI results.
+
+## Backup, recovery and rollback (10)
+
+From the `erlang` directory, with the intended SQLite `DATABASE_URL` already bound, run `escript scripts/sqlite-backup.escript /absolute/private/new-backup.sqlite`. Use an operator-owned private directory and a new destination. The script uses SQLite's consistent `VACUUM INTO`, refuses the source path/existing target, sets mode 0600, and checks integrity/foreign keys. The backup contains private originals, versions and receipts: protect it as account data. `scripts/sqlite-restore-drill.py --database <explicit-disposable-acceptance-url>` verifies every row and blob in an independent copy without overwriting the original.
+
+For actual recovery, stop writers, retain the current database and WAL/SHM as a recovery set, verify the selected backup, and start against a separate restored path before switching the application database setting. Do not overwrite a running SQLite database. PostgreSQL production backup/restore remains an operator prerequisite for any future production deployment.
+
+To roll back a feature, disable its flag on this release and redeploy/restart while retaining additive tables and receipts. Keep the new sign-out/local-copy cleanup code; reverting to a pre-offline binary would not provide that cleanup. Do not run destructive down migrations. Re-enable and verify retained data when the issue is resolved.
+
+The bounded load smoke exercises 80 requests at concurrency four. The isolated image also passed real generation/OCR/speech workflows with a 512 MiB memory and 0.1 CPU cap. These are demo checks, not a production capacity or availability promise. Free Render SQLite is ephemeral on instance replacement, so this release does not provide durable production storage or perform a production traffic/data cutover.

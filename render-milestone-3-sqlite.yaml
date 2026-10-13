@@ -32,6 +32,14 @@ services:
         value: "true"
       - key: STUDIO_FOCUS_ENABLED
         value: "true"
+      - key: STUDIO_DOCUMENTS_ENABLED
+        value: "true"
+      - key: STUDIO_AI_ENABLED
+        value: "true"
+      - key: STUDIO_AUDIO_ENABLED
+        value: "true"
+      - key: STUDIO_OFFLINE_ENABLED
+        value: "true"
       - key: STUDIO_STUDY_ENABLED
         value: "true"
       - key: BRIGHT_ORIGIN

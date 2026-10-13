@@ -2,12 +2,13 @@
 -behaviour(cowboy_handler).
 -export([init/2]).
 init(Req,Route) ->
-    case {os:getenv("STUDIO_HUB_ENABLED"),(library_route(Route) andalso not bright_library:enabled()) orelse (evidence_route(Route) andalso not bright_evidence:enabled()) orelse (study_route(Route) andalso not bright_study:enabled()) orelse (workspace_route(Route) andalso not bright_workspace:enabled()) orelse (focus_route(Route) andalso not bright_focus:enabled())} of
+    case {os:getenv("STUDIO_HUB_ENABLED"),(library_route(Route) andalso not bright_library:enabled()) orelse (evidence_route(Route) andalso not bright_evidence:enabled()) orelse (study_route(Route) andalso not bright_study:enabled()) orelse (workspace_route(Route) andalso not bright_workspace:enabled()) orelse (focus_route(Route) andalso not bright_focus:enabled()) orelse (documents_route(Route) andalso not bright_documents:enabled()) orelse (assistant_route(Route) andalso not bright_assistant:enabled()) orelse (media_route(Route) andalso not bright_media:enabled()) orelse (offline_route(Route) andalso not bright_offline:enabled())} of
         {"true",false} ->
             try dispatch(Req,Route)
             catch _:_ -> reply(503,#{error => unavailable},Req,Route) end;
         _ -> reply(404,#{error => not_found},Req,Route)
     end.
+dispatch(Req,{offline_public,Name,Type}) -> dispatch(Req,{public_asset,Name,Type});
 dispatch(Req,{public_asset,Name,Type}=Route) ->
     case cowboy_req:method(Req) of
         <<"GET">> -> case file:read_file(filename:join([code:priv_dir(bright_web),"static",Name])) of
@@ -54,7 +55,7 @@ authorized(Req,Route,User,Token) ->
     end.
 get(Req,session,User,Token) ->
     case bright_identity:profile(User) of
-        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token),library_enabled=>bright_library:enabled(),evidence_enabled=>bright_evidence:enabled(),study_enabled=>bright_study:enabled(),workspace_enabled=>bright_workspace:enabled(),focus_enabled=>bright_focus:enabled()},Req,session);
+        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token),library_enabled=>bright_library:enabled(),evidence_enabled=>bright_evidence:enabled(),study_enabled=>bright_study:enabled(),workspace_enabled=>bright_workspace:enabled(),focus_enabled=>bright_focus:enabled(),documents_enabled=>bright_documents:enabled(),assistant_enabled=>bright_assistant:enabled(),audio_enabled=>bright_media:enabled(),offline_enabled=>bright_offline:enabled(),user_id=>User},Req,session);
         Error -> error_reply(Error,Req,session)
     end;
 get(Req,workspace_page,_,_) -> html(bright_hub_view:render(),Req,workspace_page);
@@ -65,6 +66,30 @@ get(Req,tasks,User,_) ->
     Q=cowboy_req:parse_qs(Req),result(bright_tasks:list(User,proplists:get_value(<<"project_id">>,Q,<<>>),proplists:get_value(<<"day">>,Q,<<>>)),Req,tasks);
 get(Req,task,User,_) -> result(bright_tasks:read(User,cowboy_req:binding(id,Req)),Req,task);
 get(Req,account,User,_) -> result(bright_account:read(User),Req,account);
+get(Req,offline_page,_,_) -> html(bright_hub_view:render(),Req,offline_page);
+get(Req,{offline_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
+get(Req,offline_targets,User,_) -> result(bright_offline:targets(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,offline_targets);
+get(Req,offline,User,_) -> result(bright_offline:list(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,offline);
+get(Req,offline_package,User,_) -> result(bright_offline:read(User,cowboy_req:binding(id,Req)),Req,offline_package);
+get(Req,media_page,_,_) -> html(bright_hub_view:render(),Req,media_page);
+get(Req,{media_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
+get(Req,media,User,_) -> result(bright_media:list(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,media);
+get(Req,media_job,User,_) -> result(bright_media:read(User,cowboy_req:binding(id,Req)),Req,media_job);
+get(Req,media_original,User,_) -> case bright_media:original(User,cowboy_req:binding(id,Req)) of {ok,#{mime:=M,data:=B}}->R=cowboy_req:set_resp_header(<<"content-disposition">>,<<"attachment; filename=capture-original">>,Req),raw(200,M,B,R,media_original);E->error_reply(E,Req,media_original) end;
+get(Req,assistant_page,_,_) -> html(bright_hub_view:render(),Req,assistant_page);
+get(Req,{assistant_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
+get(Req,assistant,User,_) -> result(bright_assistant:list(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,assistant);
+get(Req,assistant_evidence,User,_) -> result(bright_mutation:guard("STUDIO_AI_ENABLED",{User,fun()->bright_documents:evidence_owned(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)) end}),Req,assistant_evidence);
+get(Req,assistant_attempt,User,_) -> result(bright_assistant:read(User,cowboy_req:binding(id,Req)),Req,assistant_attempt);
+get(Req,documents_page,_,_) -> html(bright_hub_view:render(),Req,documents_page);
+get(Req,{documents_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
+get(Req,documents,User,_) -> result(bright_documents:list(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,documents);
+get(Req,documents_evidence,User,_) -> result(bright_documents:evidence(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,documents_evidence);
+get(Req,document,User,_) -> result(bright_documents:read(User,cowboy_req:binding(id,Req),document_version(Req)),Req,document);
+get(Req,document_history,User,_) -> result(bright_documents:history(User,cowboy_req:binding(id,Req)),Req,document_history);
+get(Req,document_export,User,_) -> case bright_documents:export(User,cowboy_req:binding(id,Req),document_version(Req)) of
+ {ok,Bytes}->R=cowboy_req:set_resp_header(<<"content-disposition">>,<<"attachment; filename=studio-document.md">>,Req),raw(200,<<"text/markdown; charset=utf-8">>,Bytes,R,document_export);
+ E->error_reply(E,Req,document_export) end;
 get(Req,focus_page,_,_) -> html(bright_hub_view:render(),Req,focus_page);
 get(Req,{focus_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
 get(Req,focus_targets,User,_) -> result(bright_focus:targets(User,proplists:get_value(<<"project_id">>,cowboy_req:parse_qs(Req),<<>>)),Req,focus_targets);
@@ -115,7 +140,11 @@ asset_files("hub.js")->
     ["hub.js","ui.js"]++case bright_evidence:enabled() of true->["evidence.js"];false->[] end
         ++case bright_study:enabled() of true->["study.js"];false->[] end
         ++case bright_workspace:enabled() of true->["workspace.js"];false->[] end
-        ++case bright_focus:enabled() of true->["focus.js"];false->[] end;
+        ++case bright_focus:enabled() of true->["focus.js"];false->[] end
+        ++case bright_documents:enabled() of true->["documents.js"];false->[] end
+        ++case bright_assistant:enabled() of true->["assistant.js"];false->[] end
+        ++case bright_media:enabled() of true->["media.js"];false->[] end
+        ++case bright_offline:enabled() of true->["offline.js"];false->[] end;
 asset_files(Name)->[Name].
 read_assets([])->{ok,[]};
 read_assets([Name|Rest])->case file:read_file(filename:join([code:priv_dir(bright_web),"static",Name])) of
@@ -138,6 +167,18 @@ post(Req,account_password,User,Token) ->
             {ok,V}->R1=cowboy_req:set_resp_cookie(<<"bright_session">>,<<>>,R,(cookie_options())#{max_age=>0}),reply(200,V,R1,account_password);
             Error->error_reply(Error,R,account_password) end end,account_password)
     end;
+post(Req,offline,User,_) -> body(Req,fun(M,R)->created(bright_offline:create(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,offline) end,offline);
+post(Req,offline_revoke,User,_) -> result(bright_offline:revoke(User,cowboy_req:binding(id,Req),cowboy_req:header(<<"idempotency-key">>,Req,<<>>)),Req,offline_revoke);
+post(Req,offline_sync,User,_) -> body(Req,fun(M,R)->result(bright_offline:sync(User,cowboy_req:binding(id,R),cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,offline_sync) end,offline_sync);
+post(Req,media,User,_) ->
+ Q=cowboy_req:parse_qs(Req),P=proplists:get_value(<<"project_id">>,Q,<<>>),Title=proplists:get_value(<<"title">>,Q,<<>>),
+ Name=try uri_string:percent_decode(cowboy_req:header(<<"x-upload-filename">>,Req,<<>>)) catch _:_ -> <<>> end,
+ Mime=hd(binary:split(cowboy_req:header(<<"content-type">>,Req,<<>>),<<";">>)),case upload_body(Req,[],0) of
+ {ok,Data,R}->created(bright_media:upload(User,P,cowboy_req:header(<<"idempotency-key">>,R,<<>>),#{title=>Title,filename=>Name,mime=>Mime,data=>Data}),R,media);{too_large,R}->reply(413,#{error=>body_too_large},R,media) end;
+post(Req,media_retry,User,_) -> body(Req,fun(M,R)->result(bright_media:retry(User,cowboy_req:binding(id,R),cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,media_retry) end,media_retry);
+post(Req,assistant,User,_) -> body(Req,fun(M,R)->created(bright_assistant:create(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,assistant) end,assistant);
+post(Req,documents,User,_) -> body(Req,fun(M,R)->created(bright_documents:create(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,documents) end,documents);
+post(Req,document,User,_) -> body(Req,fun(M,R)->result(bright_documents:save(User,cowboy_req:binding(id,R),cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,document) end,document);
 post(Req,focus,User,_) ->
     body(Req,fun(M,R)->created(bright_focus:start(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,focus) end,focus);
 post(Req,focus_actions,User,_) ->
@@ -199,6 +240,16 @@ upload_body(Req,Chunks,Size) ->
     end.
 created({ok,Value},Req,Route)->reply(201,Value,Req,Route);
 created(Error,Req,Route)->error_reply(Error,Req,Route).
+document_version(Req)->case proplists:get_value(<<"version">>,cowboy_req:parse_qs(Req),undefined) of undefined->latest;B->try binary_to_integer(B) catch _:_ -> invalid end end.
+offline_route({offline_public,_,_})->true;
+offline_route({offline_asset,_,_})->true;
+offline_route(Route)->lists:member(Route,[offline_page,offline,offline_targets,offline_package,offline_revoke,offline_sync]).
+media_route({media_asset,_,_})->true;
+media_route(Route)->lists:member(Route,[media_page,media,media_job,media_original,media_retry]).
+assistant_route({assistant_asset,_,_})->true;
+assistant_route(Route)->lists:member(Route,[assistant_page,assistant,assistant_attempt,assistant_evidence]).
+documents_route({documents_asset,_,_})->true;
+documents_route(Route)->lists:member(Route,[documents_page,documents,documents_evidence,document,document_history,document_export]).
 focus_route({focus_asset,_,_})->true;
 focus_route(Route)->lists:member(Route,[focus_page,focus,focus_targets,focus_session,focus_actions]).
 workspace_route({workspace_asset,_,_})->true;
@@ -234,7 +285,7 @@ cookie_options() ->
 result({ok,Value},Req,Route) -> reply(200,Value,Req,Route);
 result(Error,Req,Route) -> error_reply(Error,Req,Route).
 error_reply({error,unauthenticated},Req,Route) ->
-    case cowboy_req:method(Req)=:= <<"GET">> andalso lists:member(Route,[hub,library,reader,evidence_page,study_page,workspace_page,focus_page]) of
+    case cowboy_req:method(Req)=:= <<"GET">> andalso lists:member(Route,[hub,library,reader,evidence_page,study_page,workspace_page,focus_page,documents_page,assistant_page,media_page,offline_page]) of
         true->
             Path=cowboy_req:path(Req),
             Next=case cowboy_req:qs(Req) of <<>>->Path;Qs-><<Path/binary,"?",Qs/binary>> end,

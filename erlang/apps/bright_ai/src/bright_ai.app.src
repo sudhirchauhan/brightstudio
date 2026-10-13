@@ -1,1 +1,1 @@
-{application, bright_ai, [{description, "bright_ai"}, {vsn, "0.1.0"}, {modules, []}, {applications, [kernel, stdlib]}]}.
+{application, bright_ai, [{description, "Revision-grounded assistant with bounded generation"}, {vsn, "0.2.0"}, {modules, []}, {applications, [kernel, stdlib, crypto, inets, ssl, bright_studio]}, {mod, {bright_ai_app, []}}]}.

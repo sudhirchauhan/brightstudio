@@ -28,6 +28,10 @@ jobs:
       STUDIO_EVIDENCE_ENABLED: 'true'
       STUDIO_STUDY_ENABLED: 'true'
       STUDIO_FOCUS_ENABLED: 'true'
+      STUDIO_DOCUMENTS_ENABLED: 'true'
+      STUDIO_AI_ENABLED: 'true'
+      STUDIO_AUDIO_ENABLED: 'true'
+      STUDIO_OFFLINE_ENABLED: 'true'
       STUDIO_WORKSPACE_ENABLED: 'true'
       BRIGHT_ORIGIN: http://127.0.0.1:10000
       BRIGHT_INSECURE_LOCAL_COOKIE: 'true'
@@ -45,7 +49,15 @@ jobs:
           node-version: '22'
           cache: npm
       - name: PDF extraction prerequisite
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils tesseract-ocr ffmpeg cmake
+      - name: Verified local generation and speech models
+        run: |
+          python3 erlang/scripts/prepare-native-models.py --prefix "$GITHUB_WORKSPACE/erlang/_build/native-runtime"
+          echo "BRIGHT_AI_EXECUTABLE=$GITHUB_WORKSPACE/erlang/_build/native-runtime/bin/llama-cli" >> "$GITHUB_ENV"
+          echo "BRIGHT_AI_MODEL_PATH=$GITHUB_WORKSPACE/erlang/_build/native-runtime/models/assistant.gguf" >> "$GITHUB_ENV"
+          echo "BRIGHT_WHISPER_EXECUTABLE=$GITHUB_WORKSPACE/erlang/_build/native-runtime/bin/whisper-cli" >> "$GITHUB_ENV"
+          echo "BRIGHT_WHISPER_MODEL_PATH=$GITHUB_WORKSPACE/erlang/_build/native-runtime/models/whisper-tiny.en.bin" >> "$GITHUB_ENV"
+          echo "BRIGHT_NATIVE_MODELS_TESTS=true" >> "$GITHUB_ENV"
       - name: Compile and integration tests
         working-directory: erlang
         run: rebar3 compile && BRIGHT_INTEGRATION_TESTS=true rebar3 eunit
@@ -78,7 +90,9 @@ jobs:
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:10000/readyz
-          node tests/release-checks.js && node tests/library-release-checks.js && node tests/evidence-release-checks.js && node tests/study-release-checks.js && node tests/workspace-release-checks.js && node tests/focus-release-checks.js
+          node tests/release-checks.js && node tests/library-release-checks.js && node tests/evidence-release-checks.js && node tests/study-release-checks.js && node tests/workspace-release-checks.js && node tests/focus-release-checks.js && node tests/documents-release-checks.js
+          VMARGS_PATH="$PWD/erlang/config/worker.vm.args" erlang/_build/prod/rel/bright_studio/bin/bright_studio stop
+          node tests/remaining-release-checks.js
       - name: Password UI and session revocation (isolated fixture accounts)
         run: |
           erlang/_build/prod/rel/bright_studio/bin/bright_studio stop

@@ -8,11 +8,11 @@
   $('#main').prepend(notice);
   function render() {
     document.body.classList.toggle('focused',focused);
-    for (const [id,mode] of [['reading-mode','reading'],['study-mode','study'],['focus-mode','focus']]) {
+    for (const [id,mode] of [['reading-mode','reading'],['study-mode','study'],['focus-mode','focus'],['document-mode','writing']]) {
       $( '#'+id).textContent = focused ? `Exit ${mode} mode` : `${mode[0].toUpperCase()+mode.slice(1)} mode`;
       $( '#'+id).setAttribute('aria-pressed',String(focused));
     }
-    for (const id of ['reader-fullscreen','study-fullscreen','focus-fullscreen']) {
+    for (const id of ['reader-fullscreen','study-fullscreen','focus-fullscreen','document-fullscreen']) {
       $( '#'+id).textContent = document.fullscreenElement ? 'Exit fullscreen · Esc' : 'Full screen';
       $( '#'+id).setAttribute('aria-pressed',String(Boolean(document.fullscreenElement)));
     }
@@ -46,7 +46,7 @@
     if(document.fullscreenElement) await document.exitFullscreen();
     focused=next; notice.textContent=''; render();
   }
-  for(const id of ['reading-mode','study-mode','focus-mode']) $( '#'+id).addEventListener('click',toggleMode);
+  for(const id of ['reading-mode','study-mode','focus-mode','document-mode']) $( '#'+id).addEventListener('click',toggleMode);
   async function fullscreen() {
     if(fullscreenPending)return;
     if(document.fullscreenElement){await document.exitFullscreen();return;}
@@ -59,7 +59,7 @@
       notice.textContent='Browser fullscreen is unavailable here. Distraction-free mode is still available.';
     } finally { fullscreenPending=false; render(); }
   }
-  for(const id of ['reader-fullscreen','study-fullscreen','focus-fullscreen']) $( '#'+id).addEventListener('click',fullscreen);
+  for(const id of ['reader-fullscreen','study-fullscreen','focus-fullscreen','document-fullscreen']) $( '#'+id).addEventListener('click',fullscreen);
   document.addEventListener('fullscreenchange',()=>{
     if(!document.fullscreenElement) focused=beforeFullscreen;
     render();
@@ -67,13 +67,14 @@
   function activity(e){return updateActivity(e);}
   async function updateActivity(e){
     const wasOpen=lessonOpen; lessonOpen=e.detail.open;
-    document.body.classList.toggle(e.type==='bright-focus'?'focus-open':'lesson-open',lessonOpen);
+    document.body.classList.toggle(e.type==='bright-focus'?'focus-open':e.type==='bright-document'?'document-open':'lesson-open',lessonOpen);
     if(!lessonOpen){if(document.fullscreenElement)await document.exitFullscreen();focused=false;}
     else if(!wasOpen){focused=true;menu(false,false);}
     render();
   }
   document.addEventListener('bright-lesson',activity);
   document.addEventListener('bright-focus',activity);
+  document.addEventListener('bright-document',activity);
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape') {
       if(document.querySelector('dialog[open]'))return;

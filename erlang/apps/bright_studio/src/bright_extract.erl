@@ -36,7 +36,7 @@ pdf(Data) ->
             try
                 ok=file:make_dir(Dir),ok=file:change_mode(Dir,8#700),
                 ok=file:write_file(In,Data),ok=file:change_mode(In,8#600),
-                Args=["--as=268435456","--cpu=10","--fsize=2097152","--",Converter,"-enc","UTF-8","-layout","-nopgbrk",In,Out],
+                Args=["--core=0","--as=268435456","--cpu=10","--fsize=2097152","--",Converter,"-enc","UTF-8","-layout","-nopgbrk",In,Out],
                 Port=open_port({spawn_executable,Limiter},[binary,exit_status,stderr_to_stdout,use_stdio,{args,Args}]),
                 case await_port(Port,erlang:monotonic_time(millisecond)+15000,0) of
                     ok->case file:read_file(Out) of {ok,B}->text(B); _->{error,invalid_document} end;

@@ -14,7 +14,7 @@ init(Path)->
         ok->case esqlite3:open(Path) of
             {ok,Db}->
                 ok=file:change_mode(Path,8#600),
-                ok=esqlite3:exec(Db,"PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;"),
+                ok=esqlite3:exec(Db,"PRAGMA busy_timeout=25; PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;"),
                 {ok,Db};
             _->{stop,sqlite_open_failed}
         end;
@@ -24,7 +24,8 @@ handle_call({query,Sql0,Args0,Mode},_,Db)->
     Sql=iolist_to_binary(Sql0),
     Args=bind_args(Sql,Args0),
     Translated=translate(Sql),
-    Result=case esqlite3:q(Db,Translated,Args) of
+    Query=try esqlite3:q(Db,Translated,Args) catch error:{case_clause,'$busy'}->{error,sqlite_busy} end,
+    Result=case Query of
         Rows when is_list(Rows)->
             Tuples=[list_to_tuple([case V of undefined->null;_->V end||V<-R])||R<-Rows],
             Select=re:run(Translated,"^\\s*(SELECT|PRAGMA)",[caseless])=/=nomatch,
@@ -35,6 +36,7 @@ handle_call({query,Sql0,Args0,Mode},_,Db)->
                 {_,_,simple}->{ok,[],[]};
                 _->{ok,esqlite3:changes(Db)}
             end;
+        {error,sqlite_busy}->{error,sqlite_busy};
         {error,_}->{error,sqlite_query_failed}
     end,
     {reply,Result,Db}.
@@ -48,7 +50,7 @@ translate(Sql)->
     Steps=[
         {"=ANY\\((\\$[0-9]+)::bigint\\[\\]\\)"," IN (SELECT value FROM json_each(\\1))"},
         {"::(text|uuid|bigint)",""},
-        {"FOR UPDATE( OF r)?( SKIP LOCKED)?", ""},
+        {"FOR UPDATE( OF [a-z_]+)?( SKIP LOCKED)?", ""},
         {"now\\(\\)([+-])interval '([0-9]+) (hours?|seconds?)'","strftime('%Y-%m-%d %H:%M:%f','now','\\1\\2 \\3')"},
         {"now\\(\\)","strftime('%Y-%m-%d %H:%M:%f','now')"},
         {"octet_length\\(([^()]+)\\)","length(CAST(\\1 AS BLOB))"},

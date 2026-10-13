@@ -1,0 +1,7 @@
+// Bounded acceptance smoke, not a claim of production capacity.
+const assert=require('node:assert/strict'),path=require('node:path'),{readFileSync}=require('node:fs');
+const base=process.env.BRIGHT_TEST_BASE||'http://127.0.0.1:10000';assert.ok(['127.0.0.1','localhost'].includes(new URL(base).hostname));const auth=JSON.parse(readFileSync(path.resolve('playwright/.auth/a.json'))),cookie=auth.cookies.filter(c=>c.name==='bright_session').map(c=>`${c.name}=${c.value}`).join(';'),headers={Cookie:cookie};
+(async()=>{const projects=await(await fetch(base+'/studio/api/hub/projects',{headers})).json(),project=projects[0].id,paths=['/healthz','/readyz','/studio/api/session','/studio/api/hub/documents?project_id='+project,'/studio/api/hub/assistant?project_id='+project,'/studio/api/hub/media?project_id='+project,'/studio/api/hub/offline/targets?project_id='+project],times=[];
+ for(let round=0;round<20;round++){await Promise.all(Array.from({length:4},async(_,i)=>{const t=performance.now(),r=await fetch(base+paths[(round*4+i)%paths.length],{headers});assert.equal(r.status,200);await r.arrayBuffer();times.push(performance.now()-t);}));}
+ times.sort((a,b)=>a-b);assert.ok(times.at(-1)<5000);console.log(JSON.stringify({requests:times.length,concurrency:4,all_statuses:200,p95_ms:Math.round(times[Math.floor(times.length*.95)]),max_ms:Math.round(times.at(-1)),scope:'bounded local smoke only'}));
+})().catch(()=>{console.error('Bounded acceptance smoke failed');process.exitCode=1;});
