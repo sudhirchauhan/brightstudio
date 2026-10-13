@@ -16,7 +16,8 @@ check() ->
                         DocumentVersions=case bright_documents:enabled() of true->lists:usort(FocusVersions++lists:seq(2,31));false->FocusVersions end,
                         AssistantVersions=case bright_assistant:enabled() of true->lists:usort(DocumentVersions++lists:seq(2,34));false->DocumentVersions end,
                         MediaVersions=case bright_media:enabled() of true->lists:usort(AssistantVersions++lists:seq(2,36));false->AssistantVersions end,
-                        Versions=case bright_offline:enabled() of true->lists:usort(MediaVersions++lists:seq(2,37));false->MediaVersions end,
+                        OfflineVersions=case bright_offline:enabled() of true->lists:usort(MediaVersions++lists:seq(2,37));false->MediaVersions end,
+                        Versions=case bright_access:enabled() of true->lists:usort(OfflineVersions++lists:seq(2,41));false->OfflineVersions end,
                         bright_sql_pool:with_connection(fun(C) ->
                             case bright_sql:equery(C,"SELECT count(*) FROM bright_schema_migrations WHERE version=ANY($1::bigint[])",[Versions]) of
                                 {ok,_,[{Count}]} when Count=:=length(Versions) -> ok;

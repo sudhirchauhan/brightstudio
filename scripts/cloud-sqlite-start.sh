@@ -5,8 +5,8 @@ docker start bright-sqlite-dev >/dev/null
 if ! docker exec bright-sqlite-dev _build/prod/rel/bright_studio/bin/bright_studio ping >/dev/null 2>&1; then
   docker exec -d -e DATABASE_URL=sqlite:/app/_build/bright-development.sqlite \
     -e STUDIO_HUB_ENABLED=true -e STUDIO_LIBRARY_ENABLED=true -e STUDIO_EVIDENCE_ENABLED=true \
-    -e STUDIO_WORKSPACE_ENABLED=true -e STUDIO_STUDY_ENABLED=true -e STUDIO_FOCUS_ENABLED=true -e STUDIO_DOCUMENTS_ENABLED=true -e STUDIO_AI_ENABLED=true -e STUDIO_AUDIO_ENABLED=true -e STUDIO_OFFLINE_ENABLED=true -e STUDIO_WEB_EXTRACTION_ENABLED=true -e BRIGHT_ORIGIN=http://127.0.0.1:10000 \
-    -e BRIGHT_INSECURE_LOCAL_COOKIE=true \
+    -e STUDIO_WORKSPACE_ENABLED=true -e STUDIO_STUDY_ENABLED=true -e STUDIO_FOCUS_ENABLED=true -e STUDIO_ACCESS_ENABLED=true -e STUDIO_DOCUMENTS_ENABLED=true -e STUDIO_AI_ENABLED=true -e STUDIO_AUDIO_ENABLED=true -e STUDIO_OFFLINE_ENABLED=true -e STUDIO_WEB_EXTRACTION_ENABLED=true -e BRIGHT_ORIGIN=http://127.0.0.1:10000 \
+    -e BRIGHT_INSECURE_LOCAL_COOKIE=true -e BRIGHT_RECOVERY_DELIVERY=local -e BRIGHT_RECOVERY_OUTBOX=/app/_build/recovery-outbox/development \
     -e BRIGHT_AI_EXECUTABLE=/app/_build/native-runtime/bin/llama-cli -e BRIGHT_AI_MODEL_PATH=/app/_build/native-runtime/models/assistant.gguf \
     -e BRIGHT_WHISPER_EXECUTABLE=/app/_build/native-runtime/bin/whisper-cli -e BRIGHT_WHISPER_MODEL_PATH=/app/_build/native-runtime/models/whisper-tiny.en.bin bright-sqlite-dev \
     sh -c '_build/prod/rel/bright_studio/bin/bright_studio foreground > /tmp/bright-release.log 2>&1'

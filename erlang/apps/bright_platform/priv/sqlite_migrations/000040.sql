@@ -1,0 +1,1 @@
+CREATE INDEX bright_password_resets_owner ON bright_password_resets(user_id,created_at_ms);

@@ -4,16 +4,17 @@ password_hash(Password, Salt) -> crypto:pbkdf2_hmac(sha256, Password, Salt, 6000
 csrf(Token) -> binary:encode_hex(crypto:hash(sha256, <<"csrf:",Token/binary>>), lowercase).
 login(Email, Password) when is_binary(Email), is_binary(Password), byte_size(Email) =< 254, byte_size(Password) =< 1024 ->
     bright_sql_pool:with_connection(fun(C) ->
-        Result = bright_sql:equery(C, "SELECT u.id,c.salt,c.password_hash FROM bright_users u JOIN bright_credentials c ON c.user_id=u.id WHERE u.email=$1 AND u.disabled_at IS NULL", [Email]),
-        case Result of
-            {ok, _, [{Id,Salt,Hash}]} ->
-                case crypto:hash_equals(Hash, password_hash(Password,Salt)) of
-                    true -> create(C,Id);
-                    false -> {error, unauthenticated}
-                end;
-            {ok, _, []} -> _ = password_hash(Password, <<0:128>>), {error, unauthenticated};
-            _ -> {error, unavailable}
+      R=bright_sql:with_transaction(C,fun(T)->
+        %% Lock first, then read credentials in a new statement snapshot.
+        %% PostgreSQL can retain joined credential values read before a lock wait.
+        case bright_sql:equery(T,"SELECT id FROM bright_users WHERE email=$1 AND disabled_at IS NULL FOR UPDATE",[Email]) of
+            {ok,_,[{Id}]}->case bright_sql:equery(T,"SELECT salt,password_hash FROM bright_credentials WHERE user_id=$1",[Id]) of
+                {ok,_,[{Salt,Hash}]}->case crypto:hash_equals(Hash,password_hash(Password,Salt)) of true->create(T,Id);false->{error,unauthenticated} end;
+                {ok,_,[]}->{error,unauthenticated};_->{error,unavailable} end;
+            {ok,_,[]}->_=password_hash(Password,<<0:128>>),{error,unauthenticated};
+            _->{error,unavailable}
         end
+      end),case R of {ok,_}->R;{error,_}->R;_->{error,unavailable} end
     end);
 login(_, _) -> {error, unauthenticated}.
 create(C,Id) ->

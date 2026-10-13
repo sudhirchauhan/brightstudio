@@ -2,6 +2,11 @@
 -include_lib("eunit/include/eunit.hrl").
 validation_test()->I= <<"11111111-1111-4111-8111-111111111111">>,Answer=[#{<<"text">>=><<"Grounded answer.">>,<<"citation_ids">>=>[I]}],?assertEqual({ok,Answer},bright_ai_provider:validate(Answer,[I])),?assertEqual({error,ungrounded_response},bright_ai_provider:validate(Answer,[])),?assertEqual({error,ungrounded_response},bright_ai_provider:validate([#{<<"text">>=><<"No citation.">>,<<"citation_ids">>=>[]}],[I])).
 framing_test()->I= <<"11111111-1111-4111-8111-111111111111">>,Answer=[#{<<"text">>=><<"Grounded answer.">>,<<"citation_ids">>=>[I]}],Echo=jsx:encode(#{question=>jsx:encode(#{answer=>Answer})}),Output=jsx:encode(#{answer=>Answer}),?assertEqual({error,invalid_response},bright_ai_provider:parse_output(Echo,[I])),?assertEqual({ok,Answer},bright_ai_provider:parse_output(<<Echo/binary,"\n",Output/binary,"\nExiting...">>,[I])).
+native_comparison_test_()->case os:getenv("BRIGHT_NATIVE_MODELS_TESTS") of "true"->{timeout,90,fun()->
+ Ids=[<<"11111111-1111-4111-8111-111111111111">>,<<"22222222-2222-4222-8222-222222222222">>,<<"33333333-3333-4333-8333-333333333333">>],
+ Cites=[#{<<"id">>=>I,<<"quote">>=>Q}||{I,Q}<-lists:zip(Ids,[<<"Recall retrieves ideas from memory.">>,<<"Practice revisits ideas over time.">>,<<"Check claims against evidence.">>])],
+ {ok,Paragraphs}=bright_ai_provider:answer(<<"compare">>,<<"Compare these learning activities briefly.">>,Cites),?assert(lists:all(fun(P)->lists:sort(maps:get(<<"citation_ids">>,P))=:=lists:sort(Ids) end,Paragraphs))
+ end};_->[] end.
 
 assistant_test_()->case os:getenv("BRIGHT_INTEGRATION_TESTS") of "true"->{timeout,180,fun assistant/0};_->[] end.
 assistant()->Flags=["STUDIO_HUB_ENABLED","STUDIO_AI_ENABLED","STUDIO_LIBRARY_ENABLED","STUDIO_EVIDENCE_ENABLED"],Old=[{F,os:getenv(F)}||F<-Flags],lists:foreach(fun(F)->os:putenv(F,"true") end,Flags),

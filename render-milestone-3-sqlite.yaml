@@ -32,6 +32,8 @@ services:
         value: "true"
       - key: STUDIO_FOCUS_ENABLED
         value: "true"
+      - key: STUDIO_ACCESS_ENABLED
+        value: "true"
       - key: STUDIO_DOCUMENTS_ENABLED
         value: "true"
       - key: STUDIO_AI_ENABLED

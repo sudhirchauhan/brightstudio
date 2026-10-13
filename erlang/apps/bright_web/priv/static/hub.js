@@ -128,12 +128,6 @@ $('#retry').addEventListener('click', async () => {
   catch(error) { $('#reading-status').textContent = error.message; }
   finally { $('#retry').disabled = false; }
 });
-window.brightClearOffline=async()=>{
- await new Promise((resolve,reject)=>{const r=indexedDB.deleteDatabase('bright-offline'),timeout=setTimeout(()=>reject(Error('Close other Bright Studio tabs to remove private copies.')),5000);r.onsuccess=()=>{clearTimeout(timeout);resolve();};r.onerror=()=>{clearTimeout(timeout);reject(Error('Could not remove private device copies.'));};r.onblocked=()=>{};});
- for(const name of await caches.keys())if(name.startsWith('bright-offline-shell-'))await caches.delete(name);
- for(const r of await navigator.serviceWorker.getRegistrations())if(r.scope===location.origin+'/studio/hub/')await r.unregister();
- localStorage.removeItem('bright-offline-owner');
-};
 $('#logout').addEventListener('click', async () => {
   try {const [remote,local]=await Promise.allSettled([api('/studio/api/session/logout',{method:'POST',headers:{'X-CSRF-Token':csrf}}),window.indexedDB&&'serviceWorker' in navigator?window.brightClearOffline():Promise.resolve()]);if(remote.status==='rejected')throw remote.reason;location.assign('/studio/login/'+(local.status==='rejected'?'?local_copies=1':''));}
   catch(error) { status(error.message,true); }
@@ -143,7 +137,7 @@ $('#logout').addEventListener('click', async () => {
   if(document.readyState!=='complete')await new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true}));
   document.querySelectorAll('nav a').forEach(a => { if(a.pathname === location.pathname) a.setAttribute('aria-current','page'); });
   try {
-    const session = await api('/studio/api/session');const previousOwner=localStorage.getItem('bright-offline-owner');if(previousOwner&&previousOwner!==session.user_id)await window.brightClearOffline();csrf = session.csrf; libraryEnabled = session.library_enabled; studyEnabled=session.study_enabled;if(session.audio_enabled)failures.no_text='No readable text was found. For a scanned PDF, try an image of the page in Audio & capture.'; $('#account').textContent = session.display_name||session.email;
+    const session = await api('/studio/api/session');const previousOwner=localStorage.getItem('bright-offline-owner');if(previousOwner&&previousOwner!==session.user_id)await window.brightClearOffline();csrf = session.csrf; libraryEnabled = session.library_enabled; studyEnabled=session.study_enabled;$('#access-nav').hidden=!session.access_enabled;if(session.audio_enabled)failures.no_text='No readable text was found. For a scanned PDF, try an image of the page in Audio & capture.'; $('#account').textContent = session.display_name||session.email;
     $('#library-notice').textContent = libraryEnabled ? 'Private TXT, PDF and EPUB files, with readable text and immutable revisions.' : 'Metadata only. File reading is currently disabled.';
     const projects = await api('/studio/api/hub/projects');
     document.dispatchEvent(new CustomEvent('bright-session',{detail:{enabled:session.evidence_enabled,studyEnabled:session.study_enabled,workspaceEnabled:session.workspace_enabled,focusEnabled:session.focus_enabled,documentsEnabled:session.documents_enabled,assistantEnabled:session.assistant_enabled,audioEnabled:session.audio_enabled,offlineEnabled:session.offline_enabled,userId:session.user_id,csrf,projects}}));

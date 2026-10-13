@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-FROM erlang:27@sha256:3bcaa1d1d910da84b59b3cfd192adc2228fcd78937adefda029f8b3a1477b3f5 AS native
-RUN apt-get update && apt-get install -y --no-install-recommends cmake git python3 && rm -rf /var/lib/apt/lists/*
+FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587 AS native
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential cmake git python3 ca-certificates libssl-dev libzstd-dev && rm -rf /var/lib/apt/lists/*
 WORKDIR /opt/setup
 COPY scripts/prepare-native-models.py scripts/native-models.lock.json ./
 RUN --mount=type=secret,id=cloud_ca \

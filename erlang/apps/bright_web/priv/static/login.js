@@ -2,12 +2,12 @@
 function returnPath() {
   try {
     const next = new URL(new URLSearchParams(location.search).get('next') || '/studio/hub/',location.origin);
-    if(next.origin === location.origin && /^\/studio\/hub\/(?:$|library\/$|evidence\/$|study\/$|focus\/$|documents\/$|assistant\/$|audio\/$|offline\/$|projects\/$|tasks\/$|planner\/$|account\/$|sources\/[0-9a-f-]{36}$)/i.test(next.pathname)) return next.pathname + next.search + (next.hash || location.hash);
+    if(next.origin === location.origin && /^\/studio\/hub\/(?:$|library\/$|evidence\/$|study\/$|focus\/$|documents\/$|assistant\/$|audio\/$|offline\/$|projects\/$|tasks\/$|planner\/$|account\/$|access\/$|sources\/[0-9a-f-]{36}$)/i.test(next.pathname)) return next.pathname + next.search + (next.hash || location.hash);
   } catch {}
   return '/studio/hub/';
 }
-if(new URLSearchParams(location.search).has('local_copies'))document.querySelector('#status').textContent='Signed out. Close other Bright Studio tabs and remove private copies from this device.';
 if(new URLSearchParams(location.search).has('password_changed'))document.querySelector('#status').textContent='Password changed. Sign in with your new password.';
+if(new URLSearchParams(location.search).has('local_copies'))document.querySelector('#status').textContent='Signed out. Close other Bright Studio tabs and remove private copies from this device.';
 document.querySelector('#login-form').addEventListener('submit', async event => {
   event.preventDefault();
   const form = event.currentTarget, button = form.querySelector('button'), status = document.querySelector('#status');

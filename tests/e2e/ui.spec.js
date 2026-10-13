@@ -87,7 +87,7 @@ test('approved layouts, screenshots and mobile keyboard navigation',async({page,
   await page.keyboard.press('Escape');await navigate(page,'Planner');await expect(page.locator('#planner-date')).not.toHaveValue('');await fits(page);
   if(await page.locator('#navigation-open').isVisible()) {
     await page.locator('#navigation-open').click();await expect(page.locator('#navigation-close')).toBeFocused();
-    await page.keyboard.press('Shift+Tab');await expect(page.getByRole('link',{name:'Account',exact:true})).toBeFocused();
+    await page.keyboard.press('Shift+Tab');await expect(page.getByRole('link',{name:await page.locator('#access-nav').isVisible()?'Access & members':'Account',exact:true})).toBeFocused();
     await page.keyboard.press('Tab');await expect(page.locator('#navigation-close')).toBeFocused();
     await page.keyboard.press('Escape');await expect(page.locator('#navigation-open')).toBeFocused();
   }

@@ -2,12 +2,25 @@
 -behaviour(cowboy_handler).
 -export([init/2]).
 init(Req,Route) ->
-    case {os:getenv("STUDIO_HUB_ENABLED"),(library_route(Route) andalso not bright_library:enabled()) orelse (evidence_route(Route) andalso not bright_evidence:enabled()) orelse (study_route(Route) andalso not bright_study:enabled()) orelse (workspace_route(Route) andalso not bright_workspace:enabled()) orelse (focus_route(Route) andalso not bright_focus:enabled()) orelse (documents_route(Route) andalso not bright_documents:enabled()) orelse (assistant_route(Route) andalso not bright_assistant:enabled()) orelse (media_route(Route) andalso not bright_media:enabled()) orelse (offline_route(Route) andalso not bright_offline:enabled())} of
+    case {os:getenv("STUDIO_HUB_ENABLED"),(library_route(Route) andalso not bright_library:enabled()) orelse (evidence_route(Route) andalso not bright_evidence:enabled()) orelse (study_route(Route) andalso not bright_study:enabled()) orelse (workspace_route(Route) andalso not bright_workspace:enabled()) orelse (focus_route(Route) andalso not bright_focus:enabled()) orelse (documents_route(Route) andalso not bright_documents:enabled()) orelse (assistant_route(Route) andalso not bright_assistant:enabled()) orelse (media_route(Route) andalso not bright_media:enabled()) orelse (offline_route(Route) andalso not bright_offline:enabled()) orelse (access_route(Route) andalso not bright_access:enabled())} of
         {"true",false} ->
             try dispatch(Req,Route)
             catch _:_ -> reply(503,#{error => unavailable},Req,Route) end;
         _ -> reply(404,#{error => not_found},Req,Route)
     end.
+dispatch(Req,Route) when Route=:=recovery_page;Route=:=reset_page ->
+    case cowboy_req:method(Req) of <<"GET">>->html(bright_access_view:recovery(Route=:=reset_page),Req,Route);_->reply(405,#{error=>method_not_allowed},Req,Route) end;
+dispatch(Req,recovery_asset)->case cowboy_req:method(Req) of <<"GET">>->case read_assets(["offline-cleanup.js","recovery.js"]) of {ok,B}->raw(200,<<"text/javascript">>,B,Req,recovery_asset);_->reply(404,#{error=>not_found},Req,recovery_asset) end;_->reply(405,#{error=>method_not_allowed},Req,recovery_asset) end;
+dispatch(Req,recovery_availability)->case cowboy_req:method(Req) of <<"GET">>->reply(200,#{available=>bright_recovery:available()},Req,recovery_availability);_->reply(405,#{error=>method_not_allowed},Req,recovery_availability) end;
+dispatch(Req,Route) when Route=:=recovery_request;Route=:=recovery_reset ->
+    case {cowboy_req:method(Req),same_origin(Req)} of
+        {<<"POST">>,true}->case bright_login_limit:allow_recovery(cowboy_req:peer(Req)) of
+            true->body(Req,fun(M,R)->case Route of
+                recovery_request->case bright_mutation:keys(M,[<<"email">>]) of true->result(bright_recovery:request(maps:get(<<"email">>,M,undefined)),R,Route);false->reply(400,#{error=>invalid_input},R,Route) end;
+                recovery_reset->case bright_mutation:keys(M,[<<"token">>,<<"new_password">>]) of true->result(bright_recovery:reset(maps:get(<<"token">>,M,undefined),maps:get(<<"new_password">>,M,undefined)),R,Route);false->reply(400,#{error=>invalid_input},R,Route) end
+            end end,Route);
+            false->reply(429,#{error=>rate_limited},Req,Route) end;
+        {<<"POST">>,false}->reply(403,#{error=>forbidden},Req,Route);_->reply(405,#{error=>method_not_allowed},Req,Route) end;
 dispatch(Req,{offline_public,Name,Type}) -> dispatch(Req,{public_asset,Name,Type});
 dispatch(Req,{public_asset,Name,Type}=Route) ->
     case cowboy_req:method(Req) of
@@ -55,9 +68,15 @@ authorized(Req,Route,User,Token) ->
     end.
 get(Req,session,User,Token) ->
     case bright_identity:profile(User) of
-        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token),library_enabled=>bright_library:enabled(),evidence_enabled=>bright_evidence:enabled(),study_enabled=>bright_study:enabled(),workspace_enabled=>bright_workspace:enabled(),focus_enabled=>bright_focus:enabled(),documents_enabled=>bright_documents:enabled(),assistant_enabled=>bright_assistant:enabled(),audio_enabled=>bright_media:enabled(),offline_enabled=>bright_offline:enabled(),user_id=>User},Req,session);
+        {ok,Profile} -> reply(200,Profile#{csrf=>bright_session:csrf(Token),library_enabled=>bright_library:enabled(),evidence_enabled=>bright_evidence:enabled(),study_enabled=>bright_study:enabled(),workspace_enabled=>bright_workspace:enabled(),focus_enabled=>bright_focus:enabled(),documents_enabled=>bright_documents:enabled(),assistant_enabled=>bright_assistant:enabled(),audio_enabled=>bright_media:enabled(),offline_enabled=>bright_offline:enabled(),access_enabled=>bright_access:enabled(),user_id=>User},Req,session);
         Error -> error_reply(Error,Req,session)
     end;
+get(Req,access_page,_,_)->html(bright_access_view:render(),Req,access_page);
+get(Req,access_asset,_,_)->case read_assets(["offline-cleanup.js","access.js"]) of {ok,B}->raw(200,<<"text/javascript">>,B,Req,access_asset);_->reply(404,#{error=>not_found},Req,access_asset) end;
+get(Req,access_recovery,_,_)->reply(200,#{available=>bright_recovery:available()},Req,access_recovery);
+get(Req,access_sessions,U,T)->result(bright_access:sessions(U,T),Req,access_sessions);
+get(Req,access_workspaces,U,_)->result(bright_membership:list(U),Req,access_workspaces);
+get(Req,access_workspace,U,_)->result(bright_membership:read(U,cowboy_req:binding(id,Req)),Req,access_workspace);
 get(Req,workspace_page,_,_) -> html(bright_hub_view:render(),Req,workspace_page);
 get(Req,{workspace_asset,Name,Type},User,Token) -> get(Req,{asset,Name,Type},User,Token);
 get(Req,workspace_projects,User,_) -> result(bright_workspace:projects(User),Req,workspace_projects);
@@ -137,7 +156,7 @@ get(Req,{asset,Name,Type}=Route,_User,_) ->
     end;
 get(Req,Route,_,_) -> reply(405,#{error=>method_not_allowed},Req,Route).
 asset_files("hub.js")->
-    ["hub.js","ui.js"]++case bright_evidence:enabled() of true->["evidence.js"];false->[] end
+    ["offline-cleanup.js","hub.js","ui.js"]++case bright_evidence:enabled() of true->["evidence.js"];false->[] end
         ++case bright_study:enabled() of true->["study.js"];false->[] end
         ++case bright_workspace:enabled() of true->["workspace.js"];false->[] end
         ++case bright_focus:enabled() of true->["focus.js"];false->[] end
@@ -150,6 +169,10 @@ read_assets([])->{ok,[]};
 read_assets([Name|Rest])->case file:read_file(filename:join([code:priv_dir(bright_web),"static",Name])) of
     {ok,Bytes}->case read_assets(Rest) of {ok,Tail}->{ok,[Bytes,<<"\n;\n">>|Tail]};E->E end;
     E->E end.
+post(Req,access_revoke_session,U,T)->result(bright_access:revoke_session(U,T,cowboy_req:binding(id,Req)),Req,access_revoke_session);
+post(Req,access_revoke_all,U,_)->result(bright_access:revoke_all(U),Req,access_revoke_all);
+post(Req,access_workspaces,U,_)->body(Req,fun(M,R)->created(bright_membership:create(U,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,access_workspaces) end,access_workspaces);
+post(Req,access_workspace,U,_)->body(Req,fun(M,R)->result(bright_membership:change(U,cowboy_req:binding(id,R),cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,access_workspace) end,access_workspace);
 post(Req,workspace_projects,User,_) ->
     body(Req,fun(M,R)->created(bright_workspace:create_project(User,cowboy_req:header(<<"idempotency-key">>,R,<<>>),M),R,workspace_projects) end,workspace_projects);
 post(Req,workspace_project,User,_) ->
@@ -252,6 +275,7 @@ documents_route({documents_asset,_,_})->true;
 documents_route(Route)->lists:member(Route,[documents_page,documents,documents_evidence,document,document_history,document_export]).
 focus_route({focus_asset,_,_})->true;
 focus_route(Route)->lists:member(Route,[focus_page,focus,focus_targets,focus_session,focus_actions]).
+access_route(R)->lists:member(R,[recovery_page,reset_page,recovery_asset,recovery_availability,recovery_request,recovery_reset,access_page,access_asset,access_recovery,access_sessions,access_revoke_session,access_revoke_all,access_workspaces,access_workspace]).
 workspace_route({workspace_asset,_,_})->true;
 workspace_route(Route)->lists:member(Route,[workspace_page,workspace_projects,workspace_project,tasks,task,account,account_password]).
 study_route({study_asset,_,_})->true;
@@ -285,7 +309,7 @@ cookie_options() ->
 result({ok,Value},Req,Route) -> reply(200,Value,Req,Route);
 result(Error,Req,Route) -> error_reply(Error,Req,Route).
 error_reply({error,unauthenticated},Req,Route) ->
-    case cowboy_req:method(Req)=:= <<"GET">> andalso lists:member(Route,[hub,library,reader,evidence_page,study_page,workspace_page,focus_page,documents_page,assistant_page,media_page,offline_page]) of
+    case cowboy_req:method(Req)=:= <<"GET">> andalso lists:member(Route,[hub,library,reader,evidence_page,study_page,workspace_page,focus_page,documents_page,assistant_page,media_page,offline_page,access_page]) of
         true->
             Path=cowboy_req:path(Req),
             Next=case cowboy_req:qs(Req) of <<>>->Path;Qs-><<Path/binary,"?",Qs/binary>> end,

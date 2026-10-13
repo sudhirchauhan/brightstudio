@@ -1,0 +1,2 @@
+const {defineConfig}=require('@playwright/test'),path=require('node:path');
+module.exports=defineConfig({testDir:path.join(__dirname,'recovery'),workers:1,use:{baseURL:process.env.BRIGHT_TEST_BASE||'http://127.0.0.1:10000',launchOptions:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{}},projects:[{name:'desktop',use:{viewport:{width:1280,height:800}}},{name:'mobile',use:{viewport:{width:390,height:844}}}]});

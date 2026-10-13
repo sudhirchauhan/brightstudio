@@ -23,6 +23,9 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       DATABASE_URL: postgres://bright:acceptance-only@127.0.0.1:5432/bright
+      STUDIO_ACCESS_ENABLED: 'true'
+      BRIGHT_RECOVERY_DELIVERY: local
+      BRIGHT_RECOVERY_OUTBOX: /tmp/bright-recovery-outbox
       STUDIO_HUB_ENABLED: 'true'
       STUDIO_LIBRARY_ENABLED: 'true'
       STUDIO_EVIDENCE_ENABLED: 'true'
@@ -93,6 +96,7 @@ jobs:
           node tests/release-checks.js && node tests/library-release-checks.js && node tests/evidence-release-checks.js && node tests/study-release-checks.js && node tests/workspace-release-checks.js && node tests/focus-release-checks.js && node tests/documents-release-checks.js
           VMARGS_PATH="$PWD/erlang/config/worker.vm.args" erlang/_build/prod/rel/bright_studio/bin/bright_studio stop
           node tests/remaining-release-checks.js
+          node tests/access-release-checks.js
       - name: Password UI and session revocation (isolated fixture accounts)
         run: |
           erlang/_build/prod/rel/bright_studio/bin/bright_studio stop
@@ -103,6 +107,7 @@ jobs:
           done
           curl --fail --silent http://127.0.0.1:10000/readyz
           node tests/account-password-ui.js
+          npm run test:recovery
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
