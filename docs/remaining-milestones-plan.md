@@ -1,5 +1,12 @@
 # Remaining feature delivery — 2026-10-13
 
+## Current account/access release
+
+Account/access release verified on 2026-10-14: application `c1e8d7e8de2e5bcbdd7d92fad3e2e39a2ef8ba71`, Render deployment `dep-db785mmi0phs73c65gig` is live on the existing free staging service. All 72 main browser cases plus two recovery browser cases, 53 SQLite and 50 PostgreSQL tests passed. Hosted desktop/mobile session and membership checks passed (four groups), including owner protection, duplicate conflicts, private API denial after revocation and truthful recovery availability. Native generation, OCR and speech passed at 512 MiB / 0.1 CPU. Recovery uses the requested private local development outbox; hosted email delivery is unconfigured. Workspace membership does not share personal learning resources. Original production durability, Reader/import/export, planner AI policy and cohort/metrics work remain. GitHub-hosted CI and production cutover are not claimed.
+
+## Earlier delivery record
+
+
 The user authorized continuing until finished. Keep Erlang/OTP application logic, the approved Quiet Studio UI, SQLite development and existing free Render staging. Free, paid and local AI/speech models are acceptable; the implementation uses small verified local models without requiring provider credentials. Main and its original service remain unchanged. Historical comparison was explicitly waived; do not request it again.
 
 | Milestone | Implemented scope | Verification/release state |

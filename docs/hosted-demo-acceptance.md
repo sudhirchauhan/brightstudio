@@ -1,5 +1,12 @@
 # Hosted SQLite demo acceptance — 2026-10-12
 
+## Current account/access release
+
+Account/access release verified on 2026-10-14: application `c1e8d7e8de2e5bcbdd7d92fad3e2e39a2ef8ba71`, Render deployment `dep-db785mmi0phs73c65gig` is live on the existing free staging service. All 72 main browser cases plus two recovery browser cases, 53 SQLite and 50 PostgreSQL tests passed. Hosted desktop/mobile session and membership checks passed (four groups), including owner protection, duplicate conflicts, private API denial after revocation and truthful recovery availability. Native generation, OCR and speech passed at 512 MiB / 0.1 CPU. Recovery uses the requested private local development outbox; hosted email delivery is unconfigured. Workspace membership does not share personal learning resources. Original production durability, Reader/import/export, planner AI policy and cohort/metrics work remain. GitHub-hosted CI and production cutover are not claimed.
+
+## Earlier delivery record
+
+
 Target: https://brightstudio-m1-staging.onrender.com . Render service `srv-db5qa5bl550s73b1qu40`, free plan, application SHA `707b20a7fa6d92fdc463b376805ac5acb35e11ce`, live deploy `dep-db657sl9fdbs73erqff0`. Main and the original main-linked service remain unchanged.
 
 The initial live browser check found an empty Library despite successful login: manually seeded data was no longer present in the disposable SQLite instance. The opt-in development bootstrap now restores versioned bundled samples when the database is recreated. Its completion marker preserves user edits on replay. It restores samples, not lost user documents; the UI continues to display the free-hosting reset notice.

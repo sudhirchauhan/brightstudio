@@ -1,4 +1,11 @@
 # Bright Studio implementation status — 2026-10-13
+
+## Current account/access release
+
+Account/access release verified on 2026-10-14: application `c1e8d7e8de2e5bcbdd7d92fad3e2e39a2ef8ba71`, Render deployment `dep-db785mmi0phs73c65gig` is live on the existing free staging service. All 72 main browser cases plus two recovery browser cases, 53 SQLite and 50 PostgreSQL tests passed. Hosted desktop/mobile session and membership checks passed (four groups), including owner protection, duplicate conflicts, private API denial after revocation and truthful recovery availability. Native generation, OCR and speech passed at 512 MiB / 0.1 CPU. Recovery uses the requested private local development outbox; hosted email delivery is unconfigured. Workspace membership does not share personal learning resources. Original production durability, Reader/import/export, planner AI policy and cohort/metrics work remain. GitHub-hosted CI and production cutover are not claimed.
+
+## Earlier delivery record
+
 Current release: Documents, Assistant, Audio/capture and Offline are live and verified on the existing free service. Application `9696d739553422875aefe6979eab7fdc997a6b22`, deployment `dep-db700ed9fdbs73eipt2g`. All 70 local browser cases, 50 SQLite and 47 PostgreSQL tests passed; actual hosted desktop/mobile journeys passed. See [remaining milestone status](remaining-milestones-plan.md) and [operations](learning-tools-runbook.md). Production durability and traffic/data cutover remain separate.
 
 The original roadmap is [Full UI-first Erlang/OTP Delivery Plan](bright-studio-full-ui-first-erlang-plan.md). It remains the source for the complete rewrite; the milestones delivered so far cover a smaller Learning Hub scope. The original roadmap file has not been rewritten to imply completion.
@@ -8,7 +15,7 @@ The original roadmap is [Full UI-first Erlang/OTP Delivery Plan](bright-studio-f
 | Slice | Original scope | Current status | Remaining work |
 |---|---|---|---|
 | 0 | Foundation and design | OTP/Cowboy application, responsive Hub and free staged demo implemented | Broader product design acceptance and production operations |
-| 1 | Account and workspace | Private sessions, project create/rename, tasks, daily planning, display names/timezones and current-password changes implemented; local and hosted desktop/mobile checks passed | User design acceptance/UI alignment, recovery delivery/membership administration and production import/cutover |
+| 1 | Account and workspace | Private sessions, project create/rename, tasks, daily planning, display names/timezones and current-password changes implemented; local and hosted desktop/mobile checks passed | User design acceptance/UI alignment, hosted recovery delivery, resource-sharing integration and production import/cutover |
 | 2 | Library and Reader | Uploads, private originals, immutable revisions, TXT/PDF/EPUB extraction and extracted-text Reader implemented; demo verified | Layout-faithful reading, remote imports and production durability are not claimed |
 | 3 | Evidence and notes | Exact revision-pinned quotes, UTF-8 anchors, annotations, versioned edits/history and project boards implemented; demo verified | Product acceptance and production release gates |
 | 4 | Study workflow | Revision-pinned recall lessons, attempts, feedback, reflection gate and resume implemented; local and hosted desktop/mobile checks passed | User design acceptance and production durability |
@@ -23,7 +30,7 @@ Milestone 1 delivered the Hub/authentication/source-metadata walking skeleton, n
 
 ## Current development and deployed state
 
-- SQLite development is implemented alongside the PostgreSQL backend. Application/domain logic remains Erlang/OTP. Versioned SQLite migrations cover versions 1–37; PostgreSQL migrations and TLS checks remain intact.
+- SQLite development is implemented alongside the PostgreSQL backend. Application/domain logic remains Erlang/OTP. Versioned SQLite migrations cover versions 1–41; PostgreSQL migrations and TLS checks remain intact.
 - Default cloud development uses `scripts/cloud-sqlite-setup.sh` and `scripts/cloud-sqlite-start.sh`, with the `bright-sqlite-dev` container, a retained workspace SQLite file and supervised extraction in the web VM. Existing PostgreSQL files/volumes are preserved.
 - Render service: `brightstudio-m1-staging` (`srv-db5qa5bl550s73b1qu40`), Frankfurt, **free**, `milestone-3`, auto-deploy off. Live application commit: `9696d739553422875aefe6979eab7fdc997a6b22`; deploy `dep-db700ed9fdbs73eipt2g`. `/readyz` is the deployment health check.
 - URL: https://brightstudio-m1-staging.onrender.com/studio/login/ . Hub, Library, Evidence, Study, Workspace, Focus, Documents, Assistant, Audio/capture, Offline and web extraction are enabled. A private getting-started source, note and board were added through the real hosted APIs.
