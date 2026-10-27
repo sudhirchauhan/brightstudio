@@ -135,6 +135,19 @@ get(Req,library_state,User,_) ->
     result(bright_library:states(User,Project),Req,library_state);
 get(Req,revisions,User,_) -> result(bright_library:revisions(User,cowboy_req:binding(id,Req)),Req,revisions);
 get(Req,revision_content,User,_) -> result(bright_library:content(User,cowboy_req:binding(id,Req),cowboy_req:binding(revision,Req)),Req,revision_content);
+get(Req,revision_book,User,_) ->
+    case bright_library:original(User,cowboy_req:binding(id,Req),cowboy_req:binding(revision,Req)) of
+        {ok,#{mime:=<<"application/epub+zip">>,data:=Data}}->result(bright_extract:book(Data),Req,revision_book);
+        {ok,_}->reply(400,#{error=>invalid_input},Req,revision_book);
+        E->error_reply(E,Req,revision_book) end;
+get(Req,pdf_asset,_,_)->
+    File=cowboy_req:binding(file,Req),Dir=cowboy_req:binding(directory,Req,<<>>),
+    Allowed=case Dir of
+        <<>>->lists:member(File,[<<"pdf.mjs">>,<<"pdf.worker.mjs">>]);
+        _->lists:member(Dir,[<<"cmaps">>,<<"standard_fonts">>]) andalso re:run(File,<<"^[A-Za-z0-9_-]+\\.(bcmap|pfb|ttf)$">>,[{capture,none}])=:=match end,
+    case Allowed of
+        true->Name=filename:join(["pdfjs",binary_to_list(Dir),binary_to_list(File)]),Type=case Dir of <<>>-><<"text/javascript">>;_-><<"application/octet-stream">> end,case file:read_file(filename:join([code:priv_dir(bright_web),"static",Name])) of {ok,B}->raw(200,Type,B,Req,pdf_asset);_->reply(404,#{error=>not_found},Req,pdf_asset) end;
+        false->reply(404,#{error=>not_found},Req,pdf_asset) end;
 get(Req,revision_original,User,_) ->
     case bright_library:original(User,cowboy_req:binding(id,Req),cowboy_req:binding(revision,Req)) of
         {ok,#{mime:=Mime,data:=Data}} ->
@@ -156,7 +169,7 @@ get(Req,{asset,Name,Type}=Route,_User,_) ->
     end;
 get(Req,Route,_,_) -> reply(405,#{error=>method_not_allowed},Req,Route).
 asset_files("hub.js")->
-    ["offline-cleanup.js","hub.js","ui.js"]++case bright_evidence:enabled() of true->["evidence.js"];false->[] end
+    ["offline-cleanup.js","hub.js","ui.js","reader.js"]++case bright_evidence:enabled() of true->["evidence.js"];false->[] end
         ++case bright_study:enabled() of true->["study.js"];false->[] end
         ++case bright_workspace:enabled() of true->["workspace.js"];false->[] end
         ++case bright_focus:enabled() of true->["focus.js"];false->[] end
@@ -282,7 +295,7 @@ study_route({study_asset,_,_})->true;
 study_route(Route)->lists:member(Route,[study_page,study,study_pass,study_attempts]).
 evidence_route({evidence_asset,_,_})->true;
 evidence_route(Route)->lists:member(Route,[evidence_page,evidence,evidence_item,evidence_notes,boards,board,board_links]).
-library_route(Route)->lists:member(Route,[library_state,revisions,revision_content,revision_original,revision_retry]).
+library_route(Route)->lists:member(Route,[library_state,revisions,revision_content,revision_original,revision_retry,revision_book,pdf_asset]).
 body(Req,Fun,Route) ->
     case cowboy_req:header(<<"content-type">>,Req,<<>>) of
         <<"application/json",_/binary>> ->
@@ -327,6 +340,9 @@ error_reply({error,Reason},Req,Route) ->
     end,
     reply(Code,#{error=>Public},Req,Route).
 reply(Code,Value,Req,Route) -> raw(Code,<<"application/json; charset=utf-8">>,jsx:encode(Value),Req,Route).
+html(Bytes,Req,reader) ->
+    H=response_headers(<<"text/html; charset=utf-8">>),
+    {ok,cowboy_req:reply(200,H#{<<"content-security-policy">>=><<"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; worker-src 'self'; font-src 'self' blob:; img-src 'self' data: blob:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'">>},Bytes,Req),reader};
 html(Bytes,Req,Route) -> raw(200,<<"text/html; charset=utf-8">>,Bytes,Req,Route).
 raw(Code,Type,Bytes,Req,Route) ->
     {ok,cowboy_req:reply(Code,response_headers(Type),Bytes,Req),Route}.

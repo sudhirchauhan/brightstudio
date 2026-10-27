@@ -8,7 +8,7 @@ RUN --mount=type=secret,id=cloud_ca \
       python3 prepare-native-models.py --prefix /opt/bright-native --ca-file /run/secrets/cloud_ca; \
     else python3 prepare-native-models.py --prefix /opt/bright-native; fi
 FROM erlang:27@sha256:3bcaa1d1d910da84b59b3cfd192adc2228fcd78937adefda029f8b3a1477b3f5 AS build
-RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 # The pinned image includes rebar3 3.27.0. Retain Hex checksums and TLS verification.
 COPY . .

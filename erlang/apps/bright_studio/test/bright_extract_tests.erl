@@ -23,3 +23,23 @@ unsafe_archive_test()->
     <<Before:(Pos+24)/binary,_Size:32/little,After/binary>>=Archive,
     Bomb= <<Before/binary,1:32/little,After/binary>>,
     ?assertEqual({error,resource_limit},bright_extract:run(<<"application/epub+zip">>,Bomb)).
+
+formatted_epub_test()->
+ {ok,[First,Second]}=bright_extract:book(bright_m2_fixtures:epub()),
+ ?assertNotEqual(nomatch,binary:match(maps:get(text,First),<<"First chapter">>)),
+ ?assertNotEqual(nomatch,binary:match(maps:get(text,Second),<<"Second chapter">>)),
+ Nodes=jsx:encode(maps:get(nodes,First)),
+ ?assertNotEqual(nomatch,binary:match(Nodes,<<"h1">>)),
+ ?assertEqual(nomatch,binary:match(Nodes,<<"hidden script">>)),
+ ?assertEqual({error,invalid_document},bright_extract:book(bright_m2_fixtures:unsafe_epub())),
+ ?assertEqual(<<"EPUB/Images/cover.png">>,bright_epub_view:resolve(<<"../Images/cover.png">>,<<"EPUB/Text/chapter.xhtml">>)),
+ ?assertError(_,bright_epub_view:resolve(<<"../../outside">>,<<"EPUB/book.opf">>)),
+ ?assertError(_,bright_epub_view:resolve(<<"https://example.test/image">>,<<"EPUB/book.opf">>)).
+scanned_pdf_test_()->{timeout,150,fun()->
+ Dir=filename:join([filename:dirname(?FILE),"fixtures"]),
+ lists:foreach(fun(Name)->
+  {ok,B}=file:read_file(filename:join(Dir,Name)),{ok,Text}=bright_extract:run(<<"application/pdf">>,B),
+  ?assertNotEqual(nomatch,binary:match(Text,<<"Bright Studio OCR preserves useful ideas">>)),
+  case Name of "mixed.pdf"->?assertNotEqual(nomatch,binary:match(Text,<<"Embedded text stays readable">>));_->ok end
+ end,["scanned.pdf","mixed.pdf"])
+ end}.

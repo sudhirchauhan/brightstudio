@@ -21,6 +21,7 @@
     $('#evidence-dialog').showModal();$('#evidence-note').focus();
   }
   $('#capture-selection').addEventListener('click',()=>{
+    const formatted=window.brightFormattedSelection?.();if(formatted){if(formatted.error){msg(formatted.error);return;}selected(formatted.start,formatted.end);return;}
     const current=window.getSelection(),pre=$('#reading-text pre');
     if(!pre||!current.rangeCount||current.isCollapsed){msg('Select text in the Reader first, or use Find quote.');return;}
     const range=current.getRangeAt(0);if(!pre.contains(range.startContainer)||!pre.contains(range.endContainer)){msg('Select text within this revision only.');return;}
@@ -47,7 +48,7 @@
       card.append(el('h3',item.source_title),el('p',`Pinned to revision ${item.revision}${item.anchor_state==='unresolved'?' · Unresolved anchor':reader&&reader.revisionId!==item.revision_id?' · Earlier revision':''}`),el('blockquote',item.quote),el('p',item.note||'No note yet.'));
       const actions=el('div');actions.className='evidence-actions';
       const open=el('a','Open pinned revision');open.href=`/studio/hub/sources/${item.source_id}?revision=${item.revision_id}#highlight-${item.id}`;actions.append(open);
-      if(reader?.revisionId===item.revision_id&&item.anchor_state==='resolved')actions.append(button('Show highlight',()=>{const mark=document.getElementById(`highlight-${item.id}`);if(mark){mark.scrollIntoView({block:'center'});mark.tabIndex=-1;mark.focus();}else msg('This highlight overlaps another. Its quote and exact location are retained.');}));
+      if(reader?.revisionId===item.revision_id&&item.anchor_state==='resolved')actions.append(button('Show highlight',()=>{if(window.brightShowFormattedEvidence?.(item))return;const mark=document.getElementById(`highlight-${item.id}`);if(mark){mark.scrollIntoView({block:'center'});mark.tabIndex=-1;mark.focus();}else msg('This highlight overlaps another. Its quote and exact location are retained.');}));
       actions.append(button('Edit note',()=>{
         editItem=item;selection=undefined;saveKey=crypto.randomUUID();savePayload=undefined;
         $('#selected-quote').textContent=item.quote;$('#evidence-note').value=item.note;$('#evidence-dialog-title').textContent=`Edit note · Version ${item.version}`;$('#evidence-save').textContent='Save note';$('#evidence-form-status').replaceChildren();$('#evidence-dialog').showModal();$('#evidence-note').focus();
@@ -61,7 +62,7 @@
   }
   async function loadEvidence(){
     const current=reader,version=++generation;msg('Loading evidence…');$('#evidence-list').replaceChildren();
-    try{const list=await api(`/studio/api/hub/evidence?source_id=${current.sourceId}`);if(version!==generation)return;items=list;cards($('#evidence-list'),items);paint();msg(items.length?`${items.length} pinned evidence items. Quotes stay attached to their original revision.`:'No evidence saved yet.');
+    try{const list=await api(`/studio/api/hub/evidence?source_id=${current.sourceId}`);if(version!==generation)return;items=list;document.dispatchEvent(new CustomEvent('bright-evidence-items',{detail:items}));cards($('#evidence-list'),items);paint();msg(items.length?`${items.length} pinned evidence items. Quotes stay attached to their original revision.`:'No evidence saved yet.');
       const mark=location.hash.startsWith('#highlight-')?document.getElementById(location.hash.slice(1)):null;if(mark)mark.scrollIntoView({block:'center'});
     }catch(error){if(version===generation)msg(error.message);}
   }

@@ -4,7 +4,7 @@ let csrf, sources = [], states = new Map(), key, requestData, loadVersion = 0, l
 let sourceId, revisions = [], selectedRevision, revisionVersion = 0, uploadSource, uploadKey, uploadFingerprint, createdSource;
 const pending = new Set(['queued', 'processing']);
 const labels = {queued:'Waiting to extract',processing:'Extracting',ready:'Ready to read',failed:'Needs attention'};
-const failures = {no_text:'No readable text was found. Scanned PDFs need OCR, which is not available yet.',invalid_document:'This file could not be read. Check that it is valid, UTF-8 for TXT, and not password protected.',resource_limit:'This file exceeds the extraction limits. Try a smaller document.',extraction_unavailable:'The file converter is unavailable. Your original is saved; retry when the service is restored.',worker_unavailable:'Extraction could not finish after repeated worker restarts. You can retry.'};
+const failures = {ocr_page_limit:'This PDF exceeds the 12 scanned-page OCR limit. Split it into smaller files. ',no_text:'No readable text was found, including English OCR. Try a clearer scan.',invalid_document:'This file could not be read. Check that it is valid, UTF-8 for TXT, and not password protected.',resource_limit:'This file exceeds the extraction limits. Try a smaller document.',extraction_unavailable:'The file converter is unavailable. Your original is saved; retry when the service is restored.',worker_unavailable:'Extraction could not finish after repeated worker restarts. You can retry.'};
 const messages = {400:'Check the source details and file format.',401:'Your session has expired. Sign in again.',403:'You do not have access to this project.',404:'This source or revision is unavailable.',409:'The request conflicts with an earlier save, or the revision is not ready.',413:'The upload exceeds the 4 MiB file limit or your private storage allowance.',415:'Choose a TXT, PDF or EPUB file.',503:'The database is unavailable. Your changes have not been confirmed. Retry the same request.'};
 async function api(path, options = {}) {
   let response;
@@ -110,12 +110,12 @@ async function loadRevisions() {
     if(revision.state==='failed')$('#reader-tools').open=true;
     $('#download').hidden = false; $('#download').href = `/studio/api/hub/sources/${sourceId}/revisions/${selectedRevision}/original`;
     $('#retry').hidden = revision.state !== 'failed'; $('#reading-text').replaceChildren();
-    document.dispatchEvent(new CustomEvent('bright-reader',{detail:{sourceId,revisionId:selectedRevision,text:null,state:revision.state}}));
+    document.dispatchEvent(new CustomEvent('bright-reader',{detail:{sourceId,revisionId:selectedRevision,text:null,state:revision.state,mime:revision.mime}}));
     if (revision.state === 'ready') {
       const content = await api(`/studio/api/hub/sources/${sourceId}/revisions/${selectedRevision}/content`);
       if (version !== revisionVersion) return;
       const text = document.createElement('pre'); text.textContent = content.text; $('#reading-text').append(text);
-      document.dispatchEvent(new CustomEvent('bright-reader',{detail:{sourceId,revisionId:selectedRevision,text:content.text,state:'ready'}}));
+      document.dispatchEvent(new CustomEvent('bright-reader',{detail:{sourceId,revisionId:selectedRevision,text:content.text,state:'ready',mime:revision.mime}}));
       $('#reading-status').textContent = `Ready to read · Revision ${revision.revision}`; status('Your original and reading text are saved.');
     } else if (revision.state === 'failed') { $('#reading-status').textContent = failures[revision.error] || 'Extraction failed. Your original is still available.'; }
     else { $('#reading-status').textContent = revision.state === 'processing' ? 'Extracting readable text…' : 'Original saved. Waiting for the extraction worker…'; }
@@ -137,7 +137,7 @@ $('#logout').addEventListener('click', async () => {
   if(document.readyState!=='complete')await new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true}));
   document.querySelectorAll('nav a').forEach(a => { if(a.pathname === location.pathname) a.setAttribute('aria-current','page'); });
   try {
-    const session = await api('/studio/api/session');const previousOwner=localStorage.getItem('bright-offline-owner');if(previousOwner&&previousOwner!==session.user_id)await window.brightClearOffline();csrf = session.csrf; libraryEnabled = session.library_enabled; studyEnabled=session.study_enabled;$('#access-nav').hidden=!session.access_enabled;if(session.audio_enabled)failures.no_text='No readable text was found. For a scanned PDF, try an image of the page in Audio & capture.'; $('#account').textContent = session.display_name||session.email;
+    const session = await api('/studio/api/session');const previousOwner=localStorage.getItem('bright-offline-owner');if(previousOwner&&previousOwner!==session.user_id)await window.brightClearOffline();csrf = session.csrf; libraryEnabled = session.library_enabled; studyEnabled=session.study_enabled;$('#access-nav').hidden=!session.access_enabled; $('#account').textContent = session.display_name||session.email;
     $('#library-notice').textContent = libraryEnabled ? 'Private TXT, PDF and EPUB files, with readable text and immutable revisions.' : 'Metadata only. File reading is currently disabled.';
     const projects = await api('/studio/api/hub/projects');
     document.dispatchEvent(new CustomEvent('bright-session',{detail:{enabled:session.evidence_enabled,studyEnabled:session.study_enabled,workspaceEnabled:session.workspace_enabled,focusEnabled:session.focus_enabled,documentsEnabled:session.documents_enabled,assistantEnabled:session.assistant_enabled,audioEnabled:session.audio_enabled,offlineEnabled:session.offline_enabled,userId:session.user_id,csrf,projects}}));

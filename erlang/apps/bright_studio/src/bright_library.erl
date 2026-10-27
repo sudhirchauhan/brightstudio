@@ -115,7 +115,7 @@ claim() ->
         true -> bright_sql_pool:with_connection(fun(C)->
             bright_sql:equery(C,"UPDATE bright_source_revisions SET state='failed',error_code='worker_unavailable',lease_token=NULL,lease_until=NULL WHERE state='processing' AND lease_until<now() AND attempts>=3",[]),
             Token = bright_project_auth:new_id(),
-            Sql = "WITH candidate AS (SELECT r.id FROM bright_source_revisions r JOIN bright_users u ON u.id=r.owner_id WHERE u.disabled_at IS NULL AND r.attempts<3 AND (r.state='queued' OR (r.state='processing' AND r.lease_until<now())) ORDER BY r.created_at FOR UPDATE OF r SKIP LOCKED LIMIT 1) UPDATE bright_source_revisions r SET state='processing',attempts=r.attempts+1,lease_token=$1,lease_until=now()+interval '30 seconds',error_code=NULL FROM candidate c WHERE r.id=c.id RETURNING r.id,r.source_id,r.owner_id",
+            Sql = "WITH candidate AS (SELECT r.id FROM bright_source_revisions r JOIN bright_users u ON u.id=r.owner_id WHERE u.disabled_at IS NULL AND r.attempts<3 AND (r.state='queued' OR (r.state='processing' AND r.lease_until<now())) ORDER BY r.created_at FOR UPDATE OF r SKIP LOCKED LIMIT 1) UPDATE bright_source_revisions r SET state='processing',attempts=r.attempts+1,lease_token=$1,lease_until=now()+interval '180 seconds',error_code=NULL FROM candidate c WHERE r.id=c.id RETURNING r.id,r.source_id,r.owner_id",
             case bright_sql:equery(C,Sql,[Token]) of
                 {ok,1,_,[{Id,Source,User}]} -> {ok,#{id=>Id,source_id=>Source,owner_id=>User,lease_token=>Token}};
                 {ok,0,_,[]} -> empty;

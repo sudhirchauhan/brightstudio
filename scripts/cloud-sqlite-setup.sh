@@ -23,7 +23,7 @@ fi
 if docker container inspect bright-m2-worker >/dev/null 2>&1 && docker exec -e VMARGS_PATH=/app/config/worker.vm.args bright-m2-worker _build/prod/rel/bright_studio/bin/bright_studio ping >/dev/null 2>&1; then
   docker exec -e VMARGS_PATH=/app/config/worker.vm.args bright-m2-worker _build/prod/rel/bright_studio/bin/bright_studio stop
 fi
-docker exec --user 0 bright-sqlite-dev sh -c 'if ! command -v pdftotext >/dev/null; then apt-get update -qq && apt-get install -y --no-install-recommends poppler-utils; fi'
+docker exec --user 0 bright-sqlite-dev sh -c 'if ! command -v pdftotext >/dev/null || ! command -v tesseract >/dev/null; then apt-get update -qq && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr; fi'
 docker cp /etc/ssl/certs/ca-certificates.crt bright-sqlite-dev:/tmp/bright-ca.crt >/dev/null
 docker exec --user 0 bright-sqlite-dev sh -c 'mkdir -p /.config/rebar3; printf "{ssl_cacerts_path, \"/tmp/bright-ca.crt\"}.\n" > /.config/rebar3/rebar.config'
 # Preserve the cloud proxy route and TLS verification when compiling in Docker.

@@ -44,7 +44,7 @@ if docker exec -e VMARGS_PATH=/app/config/worker.vm.args bright-m2-worker _build
   docker exec -e VMARGS_PATH=/app/config/worker.vm.args bright-m2-worker _build/prod/rel/bright_studio/bin/bright_studio stop
 fi
 for runtime in bright-m1-dev bright-m2-worker; do
-  docker exec --user 0 "$runtime" sh -c 'if ! command -v pdftotext >/dev/null; then apt-get update -qq && apt-get install -y --no-install-recommends poppler-utils; fi'
+  docker exec --user 0 "$runtime" sh -c 'if ! command -v pdftotext >/dev/null || ! command -v tesseract >/dev/null; then apt-get update -qq && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr; fi'
 done
 # Use the platform's public CA bundle through rebar3's documented trust setting.
 docker cp /etc/ssl/certs/ca-certificates.crt bright-m1-dev:/tmp/bright-ca.crt >/dev/null

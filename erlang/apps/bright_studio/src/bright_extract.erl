@@ -1,5 +1,5 @@
 -module(bright_extract).
--export([run/2]).
+-export([run/2,book/1]).
 -define(MAX_TEXT,2097152).
 -define(MAX_ARCHIVE,8388608).
 run(<<"application/pdf">>,Data) -> pdf(Data);
@@ -26,42 +26,7 @@ text(Data) ->
             end;
         _->{error,invalid_document}
     end.
-pdf(Data) ->
-    case {os:find_executable("pdftotext"),os:find_executable("prlimit")} of
-        {false,_}->{error,extraction_unavailable};
-        {_,false}->{error,extraction_unavailable};
-        {Converter,Limiter}->
-            Dir=filename:join("/tmp","bright-extract-"++binary_to_list(bright_project_auth:new_id())),
-            In=filename:join(Dir,"original.pdf"),Out=filename:join(Dir,"text.txt"),
-            try
-                ok=file:make_dir(Dir),ok=file:change_mode(Dir,8#700),
-                ok=file:write_file(In,Data),ok=file:change_mode(In,8#600),
-                Args=["--core=0","--as=268435456","--cpu=10","--fsize=2097152","--",Converter,"-enc","UTF-8","-layout","-nopgbrk",In,Out],
-                Port=open_port({spawn_executable,Limiter},[binary,exit_status,stderr_to_stdout,use_stdio,{args,Args}]),
-                case await_port(Port,erlang:monotonic_time(millisecond)+15000,0) of
-                    ok->case file:read_file(Out) of {ok,B}->text(B); _->{error,invalid_document} end;
-                    Error->Error
-                end
-            catch _:_->{error,invalid_document}
-            after file:delete(In),file:delete(Out),file:del_dir(Dir) end
-    end.
-await_port(Port,Deadline,Bytes) ->
-    Left=max(0,Deadline-erlang:monotonic_time(millisecond)),
-    receive
-        {Port,{data,B}} when Bytes+byte_size(B)=<32768 -> await_port(Port,Deadline,Bytes+byte_size(B));
-        {Port,{data,_}} -> stop_port(Port),{error,resource_limit};
-        {Port,{exit_status,0}} -> ok;
-        {Port,{exit_status,N}} when N=:=137;N=:=152;N=:=153 -> {error,resource_limit};
-        {Port,{exit_status,_}} -> {error,invalid_document}
-    after Left -> stop_port(Port),{error,resource_limit} end.
-stop_port(Port) ->
-    case erlang:port_info(Port,os_pid) of
-        {os_pid,Pid}->
-            Kill=open_port({spawn_executable,"/bin/kill"},[exit_status,{args,["-KILL",integer_to_list(Pid)]}]),
-            receive {Kill,{exit_status,_}}->ok after 1000->catch port_close(Kill) end;
-        _->ok
-    end,
-    catch port_close(Port),ok.
+pdf(Data) -> bright_pdf_ocr:run(Data).
 %% Parse bounded ZIP metadata, then use safeInflate's bounded output chunks.
 %% Never write archive paths to disk and never trust declared sizes alone.
 archive(Bin) ->
@@ -110,7 +75,14 @@ inflate_chunks(Z,{State,Chunk},Limit,Size,Acc) when State=:=continue;State=:=fin
         continue->inflate_chunks(Z,zlib:safeInflate(Z,[]),Limit,Next,[Chunk|Acc]);
         finished->iolist_to_binary(lists:reverse([Chunk|Acc]))
     end.
-epub(Bin) ->
+book(Bin)->
+ Parent=self(),Tag=make_ref(),{Pid,Ref}=spawn_opt(fun()->
+  Result=try {ok,book_inner(Bin)} catch throw:resource_limit->{error,resource_limit};_:_->{error,invalid_document} end,Parent!{Tag,Result}
+ end,[monitor,{max_heap_size,#{size=>8388608,kill=>true,error_logger=>false,include_shared_binaries=>true}}]),
+ receive {Tag,R}->erlang:demonitor(Ref,[flush]),R;{'DOWN',Ref,process,Pid,_}->{error,resource_limit}
+ after 20000->exit(Pid,kill),erlang:demonitor(Ref,[flush]),{error,resource_limit} end.
+epub(Bin)->Chapters=book_inner(Bin),text(iolist_to_binary(lists:join(<<"\n\n">>,[maps:get(text,C)||C<-Chapters]))).
+book_inner(Bin) ->
     Files=archive(Bin),<<"application/epub+zip">>=maps:get(<<"mimetype">>,Files),
     Roots=sax(maps:get(<<"META-INF/container.xml">>,Files),fun
         ({startElement,_,"rootfile",_,Attrs},_,Acc)->[attr("full-path",Attrs)|Acc];
@@ -127,13 +99,12 @@ epub(Bin) ->
         {Href,<<"application/xhtml+xml">>}=maps:get(Id,Manifest),
         [NoFragment|_]=binary:split(Href,<<"#">>),
         Decoded=uri_string:percent_decode(NoFragment),
-        Path=list_to_binary(filename:join(filename:dirname(binary_to_list(Root)),binary_to_list(Decoded))),
-        %% filename:join adds ./ for root-level OPF; canonicalize only that safe prefix.
-        Canonical=case Path of <<"./",P/binary>>->P;_->Path end,
-        true=valid_path(Canonical),xhtml(maps:get(Canonical,Files))
+        Canonical=bright_epub_view:resolve(Decoded,Root),
+        Body=maps:get(Canonical,Files),
+        #{text=>xhtml(Body),nodes=>bright_epub_view:format(Body,Files,Canonical)}
     end || Id<-lists:reverse(Reversed)],
     true=Chapters=/=[],
-    Result=iolist_to_binary(lists:join(<<"\n\n">>,Chapters)),text(Result).
+    Chapters.
 attr(Name,Attrs) ->
     {_,_,Name,Value}=lists:keyfind(Name,3,Attrs),unicode:characters_to_binary(Value).
 sax(Bin,Fun,Initial) ->
