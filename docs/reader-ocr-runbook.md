@@ -26,6 +26,11 @@ All original, chapter and PDF asset routes require authentication and Library en
 - Full EUnit: 55 SQLite and 52 PostgreSQL cases passed with native models enabled.
 - Full desktop/mobile browser suite: 78 cases passed, including six new Reader cases and existing visual/UI/fullscreen checks.
 - `BRIGHT_TEST_DOCKER_CONTAINER=bright-sqlite-dev node tests/reader-gates-checks.js`: new Library feature gates passed on a disposable acceptance database.
+- Real mixed-PDF OCR and private PDF assets passed at 512 MiB / 0.1 CPU without OOM.
 - Production Docker build runs its real OCR tests; its build and runtime stages both install Tesseract/Poppler. Fresh cloud setup also installs both prerequisites.
 
 Deploy and actual hosted acceptance are recorded in reader-ocr-plan.md. Keep the existing free service and preserve the normal development SQLite database. Free hosted SQLite remains ephemeral; this milestone adds no production durability. Disabling Library hides formatted assets/API while retaining original revisions and notes.
+
+## Hosted release
+
+Application `aaf3bf6ea4a992bd4a5a4d84e4c4bf9476bb4724`, deployment `dep-dbggfjuk1f9s73e893b0`, is live on the existing free service. Six hosted desktop/mobile PDF/EPUB/scanned-PDF journeys passed, including annotation save/reload and sign-out privacy. Reviewed screenshots and logs are under ignored erlang/_build/setup-logs/hosted-reader. Library contains labeled Reader demo sources for testing. No paid resource, password change, new feature branch or production data/traffic cutover occurred.

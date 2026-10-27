@@ -1,5 +1,10 @@
 # Remaining feature delivery — 2026-10-13
 
+## Reader/OCR update — 28 October 2026
+
+Formatted PDF pages, safe EPUB chapters and English scanned/mixed-PDF OCR are implemented and live at `aaf3bf6ea4a992bd4a5a4d84e4c4bf9476bb4724` (`dep-dbggfjuk1f9s73e893b0`). All 78 browser cases, 55 SQLite and 52 PostgreSQL cases passed, plus six final Reader checks and six hosted desktop/mobile journeys. Real mixed OCR passed at 512 MiB / 0.1 CPU. Scanned-page annotations use the OCR text view; publisher CSS/DRM and remote imports remain outside this milestone. See [current status](implementation-status.md) and [Reader plan](reader-ocr-plan.md). Only main remains; the older entries below describe previous releases.
+
+
 ## Current account/access release
 
 Account/access release verified on 2026-10-14: application `c1e8d7e8de2e5bcbdd7d92fad3e2e39a2ef8ba71`, Render deployment `dep-db785mmi0phs73c65gig` is live on the existing free staging service. All 72 main browser cases plus two recovery browser cases, 53 SQLite and 50 PostgreSQL tests passed. Hosted desktop/mobile session and membership checks passed (four groups), including owner protection, duplicate conflicts, private API denial after revocation and truthful recovery availability. Native generation, OCR and speech passed at 512 MiB / 0.1 CPU. Recovery uses the requested private local development outbox; hosted email delivery is unconfigured. Workspace membership does not share personal learning resources. Original production durability, Reader/import/export, planner AI policy and cohort/metrics work remain. GitHub-hosted CI and production cutover are not claimed.
