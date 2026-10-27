@@ -79,10 +79,10 @@
         if(version!==epoch||draw!==renderEpoch)return;
         status(content.items.some(i=>i.str?.trim())?`Page ${index+1} of ${count}. Select text to annotate.`:`Page ${index+1} of ${count}. Scanned page: select OCR text in Text and annotations view.`);
       }else{
-        const article=document.createElement('article');article.className='epub-chapter';article.setAttribute('aria-label',`EPUB chapter ${index+1}`);for(const node of chapters[index].nodes)article.append(element(node));root.append(article);status(`Chapter ${index+1} of ${count}. Publisher scripts, external resources and styles are excluded.`);
+        const article=document.createElement('article');article.className='epub-chapter';article.setAttribute('aria-label',`EPUB chapter ${index+1}`);for(const node of chapters[index].nodes)article.append(element(node));root.append(article);status(`Chapter ${index+1} of ${count}. Select text to annotate.`);
       }
       if(version!==epoch||draw!==renderEpoch)return;
-      $('#format-prev').disabled=index===0;$('#format-next').disabled=index===count-1;paint();
+      $('#format-prev').hidden=count===1;$('#format-next').hidden=count===1;$('#format-prev').disabled=index===0;$('#format-next').disabled=index===count-1;paint();
     }catch(error){if(version!==epoch||draw!==renderEpoch||error.name==='RenderingCancelledException'||error.name==='AbortError')return;status(error.message+' Text view and private download remain available.');root.replaceChildren();}
   }
   function view(){const formatted=$('#reader-view').value==='formatted';root.hidden=!formatted;$('#reading-text').hidden=formatted;$('#format-status').hidden=!formatted;for(const id of ['format-prev','format-next','format-location-label'])$('#'+id).hidden=!formatted;$('#format-zoom-label').hidden=!formatted||current?.mime!=='application/pdf';if(formatted)render();else CSS.highlights?.delete('reader-evidence');}
